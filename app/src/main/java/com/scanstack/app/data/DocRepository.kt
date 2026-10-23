@@ -87,6 +87,14 @@ class DocRepository(private val context: Context) {
     /** Scratch file in the same folder, so it can be renamed into place. Not listed (".tmp"). */
     fun tempFile(): File = File(dir, ".work-${System.nanoTime()}.tmp")
 
+    /** Copies something from another app into a scratch file. */
+    fun copyToTemp(uri: Uri): File {
+        val out = tempFile()
+        val input = context.contentResolver.openInputStream(uri) ?: throw IOException("Can't read the scan")
+        input.use { i -> out.outputStream().use { o -> i.copyTo(o) } }
+        return out
+    }
+
     fun displayName(uri: Uri): String? = runCatching {
         context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
             if (c.moveToFirst()) c.getString(0) else null

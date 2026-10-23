@@ -58,6 +58,7 @@ fun App(
         when (tool) {
             Tool.Sign -> push("sign:$path")
             Tool.Form -> push("form:$path")
+            Tool.Watermark -> push("watermark:$path")
             Tool.Compress -> push("view:$path|compress")
             Tool.Text -> push("view:$path|text")
             Tool.Protect -> push("view:$path|password")
@@ -98,6 +99,15 @@ fun App(
                 onDone = { replaceTop("view:" + it.absolutePath) },
             )
         }
+
+        route.startsWith("watermark:") -> WatermarkScreen(
+            repo = repo,
+            file = File(route.removePrefix("watermark:")),
+            snackbar = snackbar,
+            message = message,
+            onBack = { pop() },
+            onDone = { replaceTop("view:" + it.absolutePath) },
+        )
 
         route.startsWith("form:") -> {
             val file = File(route.removePrefix("form:"))

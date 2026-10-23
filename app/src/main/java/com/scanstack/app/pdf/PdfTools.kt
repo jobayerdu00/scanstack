@@ -90,6 +90,9 @@ object PdfTools {
         }
     }
 
+    /** Adds the pages of [extra] to the end of [file], writing the result to [out]. */
+    fun append(file: File, extra: File, out: File) = merge(listOf(file, extra), out)
+
     fun merge(files: List<File>, out: File) {
         val merger = PDFMergerUtility()
         files.forEach { merger.addSource(it) }

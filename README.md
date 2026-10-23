@@ -2,11 +2,13 @@
 
 Android document scanner and PDF toolkit.
 
-## What it does (version 1.1)
+## What it does (version 1.2)
 - **Scan** documents with the camera: automatic edge detection, cropping, filters, multi-page (Google ML Kit, on-device)
 - **Import** PDFs from the phone, or open PDFs from other apps
 - **Photos to PDF**
-- **Fill & Sign**: draw and save a signature, add text, dates, ticks and crosses anywhere on a page
+- **Fill & Sign**: draw, type (5 signature fonts) or upload a signature; add text in 5 fonts with bold/italic/underline, dates, ticks and crosses anywhere on a page
+- **Watermark**: typed text or an uploaded logo, diagonal / center / tiled / corner, adjustable size and opacity
+- **Add page**: scan more pages straight into an open PDF
 - **Fill form**: type into PDF form fields (text, checkboxes, radio buttons, dropdowns), optionally lock the answers
 - **Word to PDF**: convert .docx (and .txt) files on the phone
 - **Merge** PDFs in any order
@@ -26,3 +28,6 @@ Everything runs on the phone. No account, no internet needed (except the first s
 GitHub Actions builds the app on every push to `main`
 (see `.github/workflows/build.yml`). The newest APK is published under
 **Releases → Latest test build**.
+
+## Fonts
+Signature and handwriting fonts (Great Vibes, Allura, Sacramento, Mrs Saint Delafield, Dancing Script, Caveat) are from Google Fonts under the SIL Open Font License; licenses are in `app/src/main/assets/licenses`.

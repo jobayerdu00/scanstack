@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BrandingWatermark
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Compress
 import androidx.compose.material.icons.outlined.ContentCut
@@ -64,6 +65,7 @@ enum class Tool(
     Word("Word to PDF", "Convert .docx documents to PDF", Icons.Outlined.Description, Brand.Indigo, ToolGroup.Create, false),
     Sign("Fill & Sign", "Add your signature, text, dates and ticks", Icons.Outlined.Draw, Brand.Pink, ToolGroup.Edit, true),
     Form("Fill form", "Type into a PDF's form fields", Icons.Outlined.EditNote, Brand.Green, ToolGroup.Edit, true),
+    Watermark("Watermark", "Stamp text or a logo on every page", Icons.Outlined.BrandingWatermark, Brand.Teal, ToolGroup.Edit, true),
     Merge("Merge", "Combine several PDFs into one", Icons.Outlined.Layers, Brand.Orange, ToolGroup.Edit, false),
     Extract("Extract pages", "Copy chosen pages into a new PDF", Icons.Outlined.ContentCut, Brand.Brown, ToolGroup.Edit, true),
     Compress("Compress", "Make files smaller to send", Icons.Outlined.Compress, Brand.Amber, ToolGroup.Optimize, true),
@@ -73,15 +75,18 @@ enum class Tool(
 
 /** Rounded, softly tinted square with the tool's icon. */
 @Composable
-fun ToolIcon(tool: Tool, size: Dp = 52.dp) {
+fun ToolIcon(tool: Tool, size: Dp = 52.dp) = ToolIcon(tool.icon, tool.tint, size)
+
+@Composable
+fun ToolIcon(icon: ImageVector, tint: Color, size: Dp = 52.dp) {
     Box(
         Modifier
             .size(size)
             .clip(RoundedCornerShape(size * 0.32f))
-            .background(tool.tint.copy(alpha = 0.14f)),
+            .background(tint.copy(alpha = 0.14f)),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(tool.icon, contentDescription = null, tint = tool.tint, modifier = Modifier.size(size * 0.48f))
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(size * 0.48f))
     }
 }
 

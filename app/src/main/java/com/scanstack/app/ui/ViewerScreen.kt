@@ -2,7 +2,15 @@
 
 package com.scanstack.app.ui
 
+import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.outlined.NoteAdd
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -149,6 +157,51 @@ fun ViewerScreen(
         }
     }
 
+    // ----- Add pages with the camera scanner -----
+    val listState = rememberLazyListState()
+    val addPageLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult(),
+    ) { result ->
+        if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        val scan = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
+        val uri = scan?.pdf?.uri ?: return@rememberLauncherForActivityResult
+        val added = scan?.pdf?.pageCount ?: 0
+        work("Adding pages…") {
+            val before = info?.pageCount ?: 0
+            withContext(Dispatchers.IO) {
+                val scanned = repo.copyToTemp(uri)
+                val merged = repo.tempFile()
+                try {
+                    PdfTools.append(file, scanned, merged)
+                    repo.replace(file, merged)
+                } finally {
+                    scanned.delete()
+                    merged.delete()
+                }
+            }
+            reload++
+            message(if (added == 1) "Page added" else "$added pages added")
+            if (before > 0) {
+                kotlinx.coroutines.delay(300)
+                runCatching { listState.animateScrollToItem(before) }
+            }
+        }
+    }
+
+    fun addPage() {
+        val activity = context as? ComponentActivity ?: return
+        val options = GmsDocumentScannerOptions.Builder()
+            .setGalleryImportAllowed(true)
+            .setPageLimit(20)
+            .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_PDF)
+            .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+            .build()
+        GmsDocumentScanning.getClient(options)
+            .getStartScanIntent(activity)
+            .addOnSuccessListener { sender -> addPageLauncher.launch(IntentSenderRequest.Builder(sender).build()) }
+            .addOnFailureListener { e -> message("The scanner isn't available on this phone (${e.message})") }
+    }
+
     val name = file.nameWithoutExtension
     val current = info
     val canEdit = current != null && !current.locked
@@ -230,7 +283,9 @@ fun ViewerScreen(
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         if (canEdit) {
+                            item { BarButton("Add page", Icons.Outlined.NoteAdd, Brand.Orange) { addPage() } }
                             item { BarAction(Tool.Sign) { onTool(Tool.Sign) } }
+                            item { BarAction(Tool.Watermark) { onTool(Tool.Watermark) } }
                             item { BarAction(Tool.Form) { onTool(Tool.Form) } }
                             item { BarAction(Tool.Text) { extractText() } }
                             item { BarAction(Tool.Compress) { dialog = ViewerDialog.Compress } }
@@ -261,6 +316,7 @@ fun ViewerScreen(
                 else -> BoxWithConstraints(Modifier.fillMaxSize()) {
                     val widthPx = with(LocalDensity.current) { (maxWidth - 32.dp).roundToPx() }.coerceIn(200, 1600)
                     LazyColumn(
+                        state = listState,
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(14.dp),
                         modifier = Modifier.fillMaxSize(),
@@ -444,7 +500,11 @@ fun ViewerScreen(
 }
 
 @Composable
-private fun BarAction(tool: Tool, label: String = tool.label, onClick: () -> Unit) {
+private fun BarAction(tool: Tool, label: String = tool.label, onClick: () -> Unit) =
+    BarButton(label, tool.icon, tool.tint, onClick)
+
+@Composable
+private fun BarButton(label: String, icon: ImageVector, tint: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
     Column(
         Modifier
             .width(76.dp)
@@ -453,7 +513,7 @@ private fun BarAction(tool: Tool, label: String = tool.label, onClick: () -> Uni
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        ToolIcon(tool, 40.dp)
+        ToolIcon(icon, tint, 40.dp)
         Spacer(Modifier.height(4.dp))
         Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
     }

@@ -355,7 +355,7 @@ private fun DashboardTab(
 ) {
     val pages = docs.sumOf { it.pages.coerceAtLeast(0) }
     val storage = docs.sumOf { it.sizeBytes }
-    val featured = listOf(Tool.Sign, Tool.Form, Tool.Word, Tool.Photos, Tool.Merge, Tool.Compress, Tool.Text, Tool.Protect)
+    val featured = listOf(Tool.Sign, Tool.Form, Tool.Word, Tool.Watermark, Tool.Photos, Tool.Merge, Tool.Compress, Tool.Text)
 
     LazyColumn(
         modifier = Modifier

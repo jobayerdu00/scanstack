@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
 import com.scanstack.app.data.DocRepository
+import com.scanstack.app.pdf.AppFonts
 import com.scanstack.app.ui.App
 import com.scanstack.app.ui.ScanStackTheme
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
@@ -20,6 +21,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         PDFBoxResourceLoader.init(applicationContext)
+        AppFonts.init(applicationContext)
         enableEdgeToEdge()
         if (savedInstanceState == null) readIntent(intent)
 

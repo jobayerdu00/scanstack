@@ -96,6 +96,7 @@ import com.scanstack.app.pdf.Stamp
 import com.scanstack.app.pdf.StampArt
 import com.scanstack.app.pdf.StampKind
 import com.scanstack.app.pdf.StampWriter
+import com.scanstack.app.pdf.TextFont
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -106,8 +107,6 @@ import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
-
-private val InkColors = listOf(Color(0xFF111827), Color(0xFF1D4ED8), Color(0xFFB91C1C))
 
 @Composable
 fun SignScreen(
@@ -138,12 +137,13 @@ fun SignScreen(
 
     fun nextId() = System.nanoTime()
 
-    fun add(kind: StampKind, text: String = "") {
+    fun add(kind: StampKind, choice: TextChoice? = null) {
         val color = InkColors[ink].toArgb()
+        val c = choice ?: TextChoice("", TextFont.Sans, false, false, false)
         val width = when (kind) {
             StampKind.Signature -> 0.32f
             StampKind.Check, StampKind.Cross -> 0.05f
-            StampKind.Text -> StampArt.defaultTextWidth(StampArt.textBitmap(text, color))
+            StampKind.Text -> StampArt.defaultTextWidth(StampArt.textBitmap(c.text, color, c.font, c.bold, c.italic, c.underline))
         }
         val stamp = Stamp(
             id = nextId(),
@@ -152,8 +152,12 @@ fun SignScreen(
             x = (0.5f - width / 2f).coerceIn(0f, 1f),
             y = 0.42f,
             width = width.coerceIn(0.02f, 1f),
-            text = text,
+            text = c.text,
             color = color,
+            font = c.font,
+            bold = c.bold,
+            italic = c.italic,
+            underline = c.underline,
         )
         stamps.add(stamp)
         selected = stamp.id
@@ -246,7 +250,10 @@ fun SignScreen(
                             editing = Stamp(id = 0, page = page, kind = StampKind.Text, x = 0f, y = 0f, width = 0f)
                         }
                         SignTool("Date", Icons.Outlined.Today, Brand.Violet) {
-                            add(StampKind.Text, SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date()))
+                            add(
+                                StampKind.Text,
+                                TextChoice(SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date()), TextFont.Sans, false, false, false),
+                            )
                         }
                         SignTool("Check", Icons.Outlined.Check, Brand.Green) { add(StampKind.Check) }
                         SignTool("Cross", Icons.Outlined.Clear, Brand.Red) { add(StampKind.Cross) }
@@ -373,13 +380,13 @@ fun SignScreen(
                 TextButton(onClick = {
                     showSignatureChoice = false
                     showPad = true
-                }) { Text("Draw new") }
+                }) { Text("New signature") }
             },
         )
     }
 
     if (showPad) {
-        SignaturePadDialog(
+        SignatureCreatorDialog(
             onDismiss = { showPad = false },
             onSave = { bitmap ->
                 showPad = false
@@ -391,21 +398,27 @@ fun SignScreen(
     }
 
     editing?.let { target ->
-        TextInputDialog(
-            title = if (target.id == 0L) "Add text" else "Edit text",
-            initial = target.text,
-            label = "Text",
-            confirmText = if (target.id == 0L) "Add" else "Done",
+        val isNew = target.id == 0L
+        TextStampDialog(
+            initial = if (isNew) null else TextChoice(target.text, target.font, target.bold, target.italic, target.underline),
+            color = InkColors[ink],
             onDismiss = { editing = null },
-            onConfirm = { text ->
+            onDone = { choice ->
                 editing = null
-                if (target.id == 0L) {
-                    add(StampKind.Text, text)
+                if (isNew) {
+                    add(StampKind.Text, choice)
                 } else {
                     update(target.id) { s ->
-                        val old = StampArt.textBitmap(s.text, s.color)
-                        val new = StampArt.textBitmap(text, s.color)
-                        s.copy(text = text, width = (s.width * new.width / old.width).coerceIn(0.02f, 1f))
+                        val old = StampArt.textBitmap(s.text, s.color, s.font, s.bold, s.italic, s.underline)
+                        val new = StampArt.textBitmap(choice.text, s.color, choice.font, choice.bold, choice.italic, choice.underline)
+                        s.copy(
+                            text = choice.text,
+                            font = choice.font,
+                            bold = choice.bold,
+                            italic = choice.italic,
+                            underline = choice.underline,
+                            width = (s.width * new.width / old.width).coerceIn(0.02f, 1f),
+                        )
                     }
                 }
             },
@@ -509,164 +522,4 @@ private fun SignTool(label: String, icon: ImageVector, tint: Color, onClick: () 
         Spacer(Modifier.height(4.dp))
         Text(label, style = MaterialTheme.typography.labelSmall)
     }
-}
-
-// ---------------------------------------------------------------- signature pad
-
-@Composable
-fun SignaturePadDialog(onDismiss: () -> Unit, onSave: (Bitmap) -> Unit) {
-    val strokes = remember { mutableStateListOf<List<Offset>>() }
-    var current by remember { mutableStateOf<List<Offset>>(emptyList()) }
-    var colorIndex by remember { mutableIntStateOf(0) }
-    var padSize by remember { mutableStateOf(IntSize.Zero) }
-    val density = LocalDensity.current
-    val strokeWidthPx = with(density) { 3.2.dp.toPx() }
-    val color = InkColors[colorIndex]
-
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Card(
-            Modifier
-                .fillMaxWidth(0.94f),
-            shape = RoundedCornerShape(24.dp),
-        ) {
-            Column(Modifier.padding(20.dp)) {
-                Text("Draw your signature", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                Text(
-                    "Use your finger. It's saved on this phone so you can reuse it.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(14.dp))
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(210.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color.White)
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
-                        .onSizeChanged { padSize = it }
-                        .pointerInput(Unit) {
-                            detectDragGestures(
-                                onDragStart = { current = listOf(it) },
-                                onDragEnd = {
-                                    if (current.isNotEmpty()) strokes.add(current)
-                                    current = emptyList()
-                                },
-                                onDragCancel = {
-                                    if (current.isNotEmpty()) strokes.add(current)
-                                    current = emptyList()
-                                },
-                            ) { change, _ ->
-                                change.consume()
-                                current = current + change.position
-                            }
-                        },
-                ) {
-                    Canvas(Modifier.fillMaxSize()) {
-                        val baseY = size.height * 0.74f
-                        drawLine(Color(0xFFD1D5DB), Offset(24f, baseY), Offset(size.width - 24f, baseY), strokeWidth = 2f)
-                        (strokes + listOf(current)).forEach { points ->
-                            if (points.isNotEmpty()) {
-                                drawPath(
-                                    path = smoothPath(points),
-                                    color = color,
-                                    style = Stroke(width = strokeWidthPx, cap = StrokeCap.Round, join = StrokeJoin.Round),
-                                )
-                            }
-                        }
-                    }
-                    if (strokes.isEmpty() && current.isEmpty()) {
-                        Text(
-                            "Sign here",
-                            color = Color(0xFF9CA3AF),
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.align(Alignment.Center),
-                        )
-                    }
-                }
-                Spacer(Modifier.height(14.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    InkColors.forEachIndexed { i, c ->
-                        Box(
-                            Modifier
-                                .padding(end = 10.dp)
-                                .size(28.dp)
-                                .clip(CircleShape)
-                                .background(c)
-                                .border(if (colorIndex == i) 3.dp else 0.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                                .clickable { colorIndex = i },
-                        )
-                    }
-                    Spacer(Modifier.weight(1f))
-                    TextButton(onClick = { strokes.clear(); current = emptyList() }) { Text("Clear") }
-                }
-                Spacer(Modifier.height(8.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    OutlinedButton(onClick = onDismiss) { Text("Cancel") }
-                    Spacer(Modifier.width(10.dp))
-                    Button(
-                        onClick = { onSave(signatureBitmap(strokes.toList(), color.toArgb(), strokeWidthPx)) },
-                        enabled = strokes.isNotEmpty(),
-                    ) { Text("Save signature") }
-                }
-            }
-        }
-    }
-}
-
-private fun smoothPath(points: List<Offset>): Path {
-    val path = Path()
-    path.moveTo(points[0].x, points[0].y)
-    if (points.size == 1) {
-        path.lineTo(points[0].x + 0.5f, points[0].y + 0.5f)
-        return path
-    }
-    for (i in 1 until points.size) {
-        val prev = points[i - 1]
-        val cur = points[i]
-        path.quadraticBezierTo(prev.x, prev.y, (prev.x + cur.x) / 2f, (prev.y + cur.y) / 2f)
-    }
-    path.lineTo(points.last().x, points.last().y)
-    return path
-}
-
-/** Turns the drawn strokes into a tightly cropped, transparent, high-resolution image. */
-private fun signatureBitmap(strokes: List<List<Offset>>, color: Int, strokeWidth: Float): Bitmap {
-    val all = strokes.flatten()
-    val pad = strokeWidth * 2
-    val minX = all.minOf { it.x } - pad
-    val minY = all.minOf { it.y } - pad
-    val maxX = all.maxOf { it.x } + pad
-    val maxY = all.maxOf { it.y } + pad
-    val scale = 2.5f
-    val w = ((maxX - minX) * scale).roundToInt().coerceAtLeast(4)
-    val h = ((maxY - minY) * scale).roundToInt().coerceAtLeast(4)
-    val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-    val canvas = android.graphics.Canvas(bitmap)
-    val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-        this.color = color
-        style = android.graphics.Paint.Style.STROKE
-        this.strokeWidth = strokeWidth * scale
-        strokeCap = android.graphics.Paint.Cap.ROUND
-        strokeJoin = android.graphics.Paint.Join.ROUND
-    }
-    for (points in strokes) {
-        if (points.isEmpty()) continue
-        val path = android.graphics.Path()
-        fun px(o: Offset) = (o.x - minX) * scale
-        fun py(o: Offset) = (o.y - minY) * scale
-        path.moveTo(px(points[0]), py(points[0]))
-        if (points.size == 1) {
-            path.lineTo(px(points[0]) + 0.5f, py(points[0]) + 0.5f)
-        } else {
-            for (i in 1 until points.size) {
-                val prev = points[i - 1]
-                val cur = points[i]
-                path.quadTo(px(prev), py(prev), (px(prev) + px(cur)) / 2f, (py(prev) + py(cur)) / 2f)
-            }
-            path.lineTo(px(points.last()), py(points.last()))
-        }
-        canvas.drawPath(path, paint)
-    }
-    return bitmap
 }
