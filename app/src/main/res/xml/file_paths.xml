@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
+    <!-- Private documents (before storage access is granted) -->
     <files-path name="docs" path="docs/" />
+    <!-- Internal storage/ScanStack and any folder the user picks on internal storage -->
+    <external-path name="storage" path="." />
+    <!-- Folders on an SD card -->
+    <root-path name="root" path="." />
 </paths>

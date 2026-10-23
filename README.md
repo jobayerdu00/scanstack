@@ -2,7 +2,7 @@
 
 Android document scanner and PDF toolkit.
 
-## What it does (version 1.3)
+## What it does (version 1.5)
 - **Scan** documents with the camera: automatic edge detection, cropping, filters, multi-page (Google ML Kit, on-device)
 - **Import** PDFs from the phone, or open PDFs from other apps
 - **Photos to PDF**
@@ -19,7 +19,7 @@ Android document scanner and PDF toolkit.
 - **Get text** from documents (reads real text, or scanned pages with on-device OCR)
 - **Share** or **save** to the phone
 
-Everything runs on the phone. No account, no internet needed (except the first scanner download from Google Play services).
+Documents are saved in **Internal storage/ScanStack** (changeable in Settings). Everything runs on the phone. No account, no internet needed (except the first scanner download from Google Play services).
 
 ## How it's built
 - Kotlin + Jetpack Compose (Material 3), minimum Android 8.0

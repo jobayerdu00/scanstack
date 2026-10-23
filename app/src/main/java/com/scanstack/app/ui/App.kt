@@ -100,6 +100,13 @@ fun App(
             )
         }
 
+        route == "settings" -> SettingsScreen(
+            repo = repo,
+            snackbar = snackbar,
+            message = message,
+            onBack = { pop() },
+        )
+
         route.startsWith("watermark:") -> WatermarkScreen(
             repo = repo,
             file = File(route.removePrefix("watermark:")),
@@ -149,6 +156,7 @@ fun App(
             onOpen = open,
             onMerge = { push("merge") },
             onTool = { tool, file -> openTool(tool, file) },
+            onSettings = { push("settings") },
         )
     }
 }

@@ -79,6 +79,7 @@ import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import com.scanstack.app.R
 import com.scanstack.app.data.Doc
 import com.scanstack.app.data.DocRepository
+import com.scanstack.app.data.StorageLocation
 import com.scanstack.app.pdf.PdfTools
 import com.scanstack.app.pdf.WordToPdf
 import kotlinx.coroutines.Dispatchers
@@ -107,6 +108,7 @@ fun HomeScreen(
     onOpen: (File) -> Unit,
     onMerge: () -> Unit,
     onTool: (Tool, File) -> Unit,
+    onSettings: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -118,6 +120,18 @@ fun HomeScreen(
     var deleteTarget by remember { mutableStateOf<Doc?>(null) }
     var pickFor by remember { mutableStateOf<Tool?>(null) }
     var importFor by remember { mutableStateOf<Tool?>(null) }
+
+    // ----- First run: offer to save into Internal storage/ScanStack -----
+    var showStorageIntro by remember {
+        mutableStateOf(!StorageLocation.hasAccess(context) && !StorageLocation.wasAsked(context))
+    }
+    val requestStorage = rememberStorageAccessRequest { granted ->
+        refresh()
+        message(
+            if (granted) "Documents are saved in ${StorageLocation.displayPath(StorageLocation.chosenFolder(context))}"
+            else "No problem. You can turn this on later in Settings.",
+        )
+    }
 
     LaunchedEffect(version) {
         docs = withContext(Dispatchers.IO) { repo.list() }
@@ -267,6 +281,7 @@ fun HomeScreen(
                 onOpen = { onOpen(it.file) },
                 onSeeAllTools = { tab = Tab.Tools },
                 onSeeAllFiles = { tab = Tab.Files },
+                onSettings = onSettings,
             )
             Tab.Files -> FilesTab(
                 docs = docs,
@@ -276,11 +291,25 @@ fun HomeScreen(
                 onShare = { shareFile(context, it.file) },
                 onRename = { renameTarget = it },
                 onDelete = { deleteTarget = it },
+                onSettings = onSettings,
             )
             Tab.Tools -> ToolsTab(bottomPadding = bottom, onTool = { runTool(it) })
         }
     }
 
+    if (showStorageIntro) {
+        StorageIntroDialog(
+            onAllow = {
+                showStorageIntro = false
+                StorageLocation.markAsked(context)
+                requestStorage()
+            },
+            onLater = {
+                showStorageIntro = false
+                StorageLocation.markAsked(context)
+            },
+        )
+    }
     pickFor?.let { tool ->
         DocPickerDialog(
             tool = tool,
@@ -344,6 +373,7 @@ private fun DashboardTab(
     onOpen: (Doc) -> Unit,
     onSeeAllTools: () -> Unit,
     onSeeAllFiles: () -> Unit,
+    onSettings: () -> Unit,
 ) {
     val pages = docs.sumOf { it.pages.coerceAtLeast(0) }
     val storage = docs.sumOf { it.sizeBytes }
@@ -367,6 +397,9 @@ private fun DashboardTab(
                     Spacer(Modifier.weight(1f))
                     IconButton(onClick = onSeeAllFiles) {
                         Icon(AppIcons.Search, contentDescription = "Search documents", tint = AppColors.Text)
+                    }
+                    IconButton(onClick = onSettings) {
+                        Icon(AppIcons.Settings, contentDescription = "Settings", tint = AppColors.Text)
                     }
                 }
                 Spacer(Modifier.height(Space.l))
@@ -610,7 +643,11 @@ private fun FilesTab(
     onShare: (Doc) -> Unit,
     onRename: (Doc) -> Unit,
     onDelete: (Doc) -> Unit,
+    onSettings: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val location = remember(docs) { StorageLocation.displayPath(StorageLocation.activeFolder(context)) }
+    val isPublic = remember(docs) { StorageLocation.isPublic(context) }
     var query by rememberSaveable { mutableStateOf("") }
     var sort by rememberSaveable { mutableStateOf(SortBy.Recent) }
     val shown = docs
@@ -641,7 +678,23 @@ private fun FilesTab(
                     style = MaterialTheme.typography.bodyMedium,
                     color = AppColors.TextSecondary,
                 )
-                Spacer(Modifier.height(Space.l))
+                Spacer(Modifier.height(Space.s))
+                Row(
+                    Modifier
+                        .clip(RoundedCornerShape(Radius.s))
+                        .clickable(onClick = onSettings)
+                        .padding(vertical = Space.xs),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(AppIcons.Folder, contentDescription = null, tint = AppColors.TealDark, modifier = Modifier.size(16.dp))
+                    HSpace(6)
+                    Text(
+                        if (isPublic) location else "Kept inside the app · tap to save to Internal storage/ScanStack",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = AppColors.TealDark,
+                    )
+                }
+                Spacer(Modifier.height(Space.m))
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },

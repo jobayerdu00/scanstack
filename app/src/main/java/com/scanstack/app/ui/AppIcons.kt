@@ -384,6 +384,26 @@ object AppIcons {
         }
     }
 
+    /** Settings: two sliders. */
+    val Settings: ImageVector by lazy {
+        icon("Settings") {
+            moveTo(4f, 7.5f); horizontalLineTo(11f)
+            moveTo(17f, 7.5f); horizontalLineTo(20f)
+            circle(14f, 7.5f, 2.6f)
+            moveTo(4f, 16.5f); horizontalLineTo(7f)
+            moveTo(13f, 16.5f); horizontalLineTo(20f)
+            circle(10f, 16.5f, 2.6f)
+        }
+    }
+
+    val Info: ImageVector by lazy {
+        icon("Info") {
+            circle(12f, 12f, 8.5f)
+            moveTo(12f, 11f); verticalLineTo(16.2f)
+            moveTo(12f, 7.9f); verticalLineTo(8f)
+        }
+    }
+
     val Storage: ImageVector by lazy {
         icon("Storage") {
             roundRect(4f, 4.5f, 16f, 6f, 2f)

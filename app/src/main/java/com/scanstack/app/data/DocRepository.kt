@@ -2,6 +2,7 @@ package com.scanstack.app.data
 
 import android.content.Context
 import android.net.Uri
+import android.media.MediaScannerConnection
 import android.provider.OpenableColumns
 import com.scanstack.app.pdf.PdfTools
 import java.io.File
@@ -16,16 +17,55 @@ data class Doc(
     val modified: Long,
 )
 
-/** All documents live as PDF files in the app's private "docs" folder. */
+/**
+ * All documents are PDF files in one folder: "Internal storage/ScanStack" by default
+ * (see [StorageLocation]), or the app's private folder until storage access is granted.
+ */
 class DocRepository(private val context: Context) {
 
-    val dir: File = File(context.filesDir, "docs").apply { mkdirs() }
+    /** The current documents folder. Looked up each time, since the user can change it. */
+    val dir: File get() = StorageLocation.activeFolder(context)
 
-    fun list(): List<Doc> =
-        (dir.listFiles() ?: emptyArray())
+    fun list(): List<Doc> {
+        val folder = dir
+        // Access was just granted: bring documents over from the app's private folder.
+        val private = StorageLocation.privateFolder(context)
+        if (folder != private) moveAll(private, folder)
+        val docs = (folder.listFiles() ?: emptyArray())
             .filter { it.isFile && it.extension.equals("pdf", ignoreCase = true) }
             .map { Doc(it, it.nameWithoutExtension, PdfTools.pageCount(it), it.length(), it.lastModified()) }
             .sortedByDescending { it.modified }
+        if (folder != private && docs.isNotEmpty()) {
+            // Lets file managers and computers (over USB) see new or changed files right away.
+            MediaScannerConnection.scanFile(context, docs.map { it.file.absolutePath }.toTypedArray(), null, null)
+        }
+        return docs
+    }
+
+    /** Moves every PDF from [from] to [to], renaming on clashes. Returns how many moved. */
+    fun moveAll(from: File, to: File): Int {
+        if (from.absoluteFile == to.absoluteFile) return 0
+        val files = from.listFiles { f -> f.isFile && f.extension.equals("pdf", ignoreCase = true) } ?: return 0
+        if (files.isEmpty()) return 0
+        to.mkdirs()
+        var moved = 0
+        for (f in files) {
+            var target = File(to, f.name)
+            var n = 2
+            while (target.exists()) {
+                target = File(to, "${f.nameWithoutExtension} ($n).pdf")
+                n++
+            }
+            val ok = f.renameTo(target) || runCatching {
+                f.inputStream().use { i -> target.outputStream().use { o -> i.copyTo(o) } }
+                target.setLastModified(f.lastModified())
+                f.delete()
+            }.isSuccess
+            if (ok) moved++ else target.delete()
+        }
+        from.listFiles { f -> f.name.startsWith(".work-") }?.forEach { it.delete() }
+        return moved
+    }
 
     fun cleanName(name: String): String =
         name.trim()
