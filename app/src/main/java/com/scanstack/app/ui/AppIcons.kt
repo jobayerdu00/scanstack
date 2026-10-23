@@ -384,6 +384,22 @@ object AppIcons {
         }
     }
 
+    /** Sun with a sparkle: brighten / enhance. */
+    val Enhance: ImageVector by lazy {
+        icon("Enhance") {
+            circle(11f, 13f, 3.6f)
+            moveTo(11f, 5.2f); verticalLineTo(6.6f)
+            moveTo(11f, 19.4f); verticalLineTo(20.8f)
+            moveTo(3.2f, 13f); horizontalLineTo(4.6f)
+            moveTo(17.4f, 13f); horizontalLineTo(18.8f)
+            moveTo(5.5f, 7.5f); lineTo(6.5f, 8.5f)
+            moveTo(15.5f, 17.5f); lineTo(16.5f, 18.5f)
+            moveTo(5.5f, 18.5f); lineTo(6.5f, 17.5f)
+            moveTo(18.5f, 2.5f); verticalLineTo(6.5f)
+            moveTo(16.5f, 4.5f); horizontalLineTo(20.5f)
+        }
+    }
+
     val IdCard: ImageVector by lazy {
         icon("IdCard") {
             roundRect(3f, 5f, 18f, 14f, 2.2f)

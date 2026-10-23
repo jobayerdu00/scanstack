@@ -2,10 +2,11 @@
 
 Android document scanner and PDF toolkit.
 
-## What it does (version 1.6)
+## What it does (version 1.7)
 - **Scan** documents with the camera: automatic edge detection, cropping, filters, multi-page (Google ML Kit, on-device)
 - **Import** PDFs from the phone, or open PDFs from other apps
-- **ID card**: scan front and back, both placed on one A4 page at real card size
+- **ID card**: scan front and back, both enlarged onto one Letter page (about 75% of the page)
+- **Enhance**: brighten pages and boost color (auto light balance, brightness, contrast, color) with live preview
 - **Photos to PDF**
 - **Fill & Sign**: draw, type (5 signature fonts) or upload a signature; add text in 5 fonts with bold/italic/underline, dates, ticks and crosses anywhere on a page
 - **Watermark**: typed text or an uploaded logo, diagonal / center / tiled / corner, adjustable size and opacity

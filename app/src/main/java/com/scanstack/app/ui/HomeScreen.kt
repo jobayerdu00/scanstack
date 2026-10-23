@@ -356,8 +356,8 @@ fun HomeScreen(
             title = { Text("Scan an ID card") },
             text = {
                 Text(
-                    "First scan the front, then the back. ScanStack puts both sides on one page at real card size, " +
-                        "ready to print or share.",
+                    "First scan the front, then the back. ScanStack puts both sides on one Letter page, " +
+                        "enlarged so they're easy to read, print or share.",
                     color = AppColors.TextSecondary,
                 )
             },
@@ -475,7 +475,7 @@ private fun DashboardTab(
 ) {
     val pages = docs.sumOf { it.pages.coerceAtLeast(0) }
     val storage = docs.sumOf { it.sizeBytes }
-    val featured = listOf(Tool.IdCard, Tool.Sign, Tool.Form, Tool.Word, Tool.Watermark, Tool.Merge, Tool.Compress, Tool.Text)
+    val featured = listOf(Tool.IdCard, Tool.Enhance, Tool.Sign, Tool.Form, Tool.Word, Tool.Watermark, Tool.Merge, Tool.Compress)
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

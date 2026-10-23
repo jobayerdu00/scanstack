@@ -146,36 +146,46 @@ object PdfTools {
     }
 
     /**
-     * Puts both sides of an ID card on one A4 page at real card size (85.6 x 54 mm),
-     * front on the upper half and back on the lower half, like a photocopy.
+     * Puts both sides of an ID card on one US Letter page, enlarged so together they cover
+     * about 75% of the page: stacked top and bottom for landscape cards, side by side for
+     * portrait cards. A single side is centered and fills the page width.
      */
     fun idCardPdf(context: Context, front: Uri, back: Uri?, out: File) {
-        val cardLong = 85.6f / 25.4f * 72f // mm -> points
-        val cardShort = 54f / 25.4f * 72f
-        PDDocument().use { doc ->
-            val page = PDPage(PDRectangle.A4)
-            doc.addPage(page)
-            val pw = PDRectangle.A4.width
-            val ph = PDRectangle.A4.height
-            val sides = listOfNotNull(front, back)
-            PDPageContentStream(doc, page).use { cs ->
-                sides.forEachIndexed { i, uri ->
-                    val bitmap = ImageTools.load(context, uri, 2000) ?: throw IOException("Couldn't read the scan")
-                    val portrait = bitmap.height > bitmap.width
-                    // Fit the scan inside a card-sized box with the same orientation
-                    val boxW = if (portrait) cardShort else cardLong
-                    val boxH = if (portrait) cardLong else cardShort
-                    val scale = min(boxW / bitmap.width, boxH / bitmap.height)
-                    val w = bitmap.width * scale
-                    val h = bitmap.height * scale
-                    // Centres at 30% and 70% down the page (PDF y goes up)
-                    val centerY = if (sides.size == 1) ph / 2f else if (i == 0) ph * 0.70f else ph * 0.30f
-                    val image = JPEGFactory.createFromImage(doc, bitmap, 0.92f)
-                    cs.drawImage(image, (pw - w) / 2f, centerY - h / 2f, w, h)
-                    bitmap.recycle()
+        val pageSize = PDRectangle.LETTER
+        val pw = pageSize.width   // 612 pt
+        val ph = pageSize.height  // 792 pt
+        val margin = 36f          // 0.5 inch
+        val gap = 24f
+        val aw = pw - 2 * margin
+        val ah = ph - 2 * margin
+        val bitmaps = listOfNotNull(front, back).map { uri ->
+            ImageTools.load(context, uri, 2600) ?: throw IOException("Couldn't read the scan")
+        }
+        try {
+            PDDocument().use { doc ->
+                val page = PDPage(pageSize)
+                doc.addPage(page)
+                val portrait = bitmaps.all { it.height > it.width }
+                val two = bitmaps.size == 2
+                // Space available for each side
+                val boxW = if (two && portrait) (aw - gap) / 2f else aw
+                val boxH = if (two && !portrait) (ah - gap) / 2f else ah
+                PDPageContentStream(doc, page).use { cs ->
+                    bitmaps.forEachIndexed { i, bitmap ->
+                        val scale = min(boxW / bitmap.width, boxH / bitmap.height)
+                        val w = bitmap.width * scale
+                        val h = bitmap.height * scale
+                        // Centre of this side's box (PDF y goes up from the bottom)
+                        val cx = if (two && portrait) margin + boxW / 2f + i * (boxW + gap) else pw / 2f
+                        val cy = if (two && !portrait) ph - margin - boxH / 2f - i * (boxH + gap) else ph / 2f
+                        val image = JPEGFactory.createFromImage(doc, bitmap, 0.92f)
+                        cs.drawImage(image, cx - w / 2f, cy - h / 2f, w, h)
+                    }
                 }
+                doc.save(out)
             }
-            doc.save(out)
+        } finally {
+            bitmaps.forEach { it.recycle() }
         }
     }
 

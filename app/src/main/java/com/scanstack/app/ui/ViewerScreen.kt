@@ -381,6 +381,7 @@ fun ViewerScreen(
                     ) {
                         if (canEdit) {
                             item { BarButton("Add page", AppIcons.AddPage, AppColors.TealDark, AppColors.TealSubtle) { addPage() } }
+                            item { BarAction(Tool.Enhance) { onTool(Tool.Enhance) } }
                             item { BarAction(Tool.Sign) { onTool(Tool.Sign) } }
                             item { BarAction(Tool.Watermark) { onTool(Tool.Watermark) } }
                             item { BarAction(Tool.Form) { onTool(Tool.Form) } }

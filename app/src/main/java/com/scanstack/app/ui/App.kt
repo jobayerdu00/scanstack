@@ -59,6 +59,7 @@ fun App(
             Tool.Sign -> push("sign:$path")
             Tool.Form -> push("form:$path")
             Tool.Watermark -> push("watermark:$path")
+            Tool.Enhance -> push("enhance:$path")
             Tool.Compress -> push("view:$path|compress")
             Tool.Text -> push("view:$path|text")
             Tool.Protect -> push("view:$path|password")
@@ -105,6 +106,15 @@ fun App(
             snackbar = snackbar,
             message = message,
             onBack = { pop() },
+        )
+
+        route.startsWith("enhance:") -> EnhanceScreen(
+            repo = repo,
+            file = File(route.removePrefix("enhance:")),
+            snackbar = snackbar,
+            message = message,
+            onBack = { pop() },
+            onDone = { replaceTop("view:" + it.absolutePath) },
         )
 
         route.startsWith("watermark:") -> WatermarkScreen(

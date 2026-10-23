@@ -60,6 +60,7 @@ enum class Tool(
     Watermark("Watermark", "Stamp text or a logo on every page", AppIcons.Watermark, ToolGroup.Edit, true),
     Merge("Merge", "Combine several PDFs into one", AppIcons.Merge, ToolGroup.Edit, false),
     Extract("Extract pages", "Copy chosen pages into a new PDF", AppIcons.Scissors, ToolGroup.Edit, true),
+    Enhance("Enhance", "Brighten pages and boost color", AppIcons.Enhance, ToolGroup.Optimize, true, accent = true),
     Compress("Compress", "Make files smaller to send", AppIcons.Compress, ToolGroup.Optimize, true),
     Text("Get text", "Copy text from scans and PDFs", AppIcons.Ocr, ToolGroup.Optimize, true),
     Protect("Password", "Add or remove a password", AppIcons.Lock, ToolGroup.Optimize, true);
