@@ -178,6 +178,53 @@ fun HomeScreen(
             .addOnFailureListener { e -> message("The scanner isn't available on this phone (${e.message})") }
     }
 
+    // ----- ID card: scan the front, then the back, and put both on one page -----
+    // Saved so the flow survives Android pausing the app while the camera is open
+    var idFront by rememberSaveable { mutableStateOf<android.net.Uri?>(null) }
+    var askForBack by rememberSaveable { mutableStateOf(false) }
+    var showIdIntro by remember { mutableStateOf(false) }
+
+    fun buildIdCard(front: android.net.Uri, back: android.net.Uri?) {
+        idFront = null
+        work("Creating ID card page…") {
+            val out = repo.newFile("ID card ${timestamp()}")
+            withContext(Dispatchers.IO) { PdfTools.idCardPdf(context, front, back, out) }
+            refresh()
+            message(if (back == null) "Saved the front side" else "Both sides saved on one page")
+            onOpen(out)
+        }
+    }
+
+    val idLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        if (result.resultCode != Activity.RESULT_OK) {
+            // Cancelled while scanning the back: still save the front
+            idFront?.let { buildIdCard(it, null) }
+            return@rememberLauncherForActivityResult
+        }
+        val uri = GmsDocumentScanningResult.fromActivityResultIntent(result.data)?.pages?.firstOrNull()?.imageUri
+            ?: return@rememberLauncherForActivityResult
+        val front = idFront
+        if (front == null) {
+            idFront = uri
+            askForBack = true
+        } else {
+            buildIdCard(front, uri)
+        }
+    }
+
+    fun scanIdSide() {
+        val options = GmsDocumentScannerOptions.Builder()
+            .setGalleryImportAllowed(true)
+            .setPageLimit(1)
+            .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+            .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+            .build()
+        GmsDocumentScanning.getClient(options)
+            .getStartScanIntent(activity)
+            .addOnSuccessListener { sender -> idLauncher.launch(IntentSenderRequest.Builder(sender).build()) }
+            .addOnFailureListener { e -> message("The scanner isn't available on this phone (${e.message})") }
+    }
+
     // ----- Import PDFs (optionally straight into a tool) -----
     val importPdfs = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         val tool = importFor
@@ -236,6 +283,10 @@ fun HomeScreen(
             Tool.Photos -> pickPhotos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
             Tool.Word -> pickWord.launch(WORD_TYPES)
             Tool.Merge -> onMerge()
+            Tool.IdCard -> {
+                idFront = null
+                showIdIntro = true
+            }
             else -> pickFor = tool
         }
     }
@@ -297,6 +348,53 @@ fun HomeScreen(
         }
     }
 
+    if (showIdIntro) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showIdIntro = false },
+            containerColor = AppColors.Card,
+            icon = { ToolIcon(Tool.IdCard, 48.dp) },
+            title = { Text("Scan an ID card") },
+            text = {
+                Text(
+                    "First scan the front, then the back. ScanStack puts both sides on one page at real card size, " +
+                        "ready to print or share.",
+                    color = AppColors.TextSecondary,
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    showIdIntro = false
+                    scanIdSide()
+                }, shape = RoundedCornerShape(Radius.m)) { Text("Scan front") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { showIdIntro = false }) {
+                    Text("Cancel", color = AppColors.TextSecondary)
+                }
+            },
+        )
+    }
+    if (askForBack) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = {},
+            containerColor = AppColors.Card,
+            icon = { ToolIcon(AppIcons.Check, AppColors.TealDark, 48.dp, AppColors.TealSubtle) },
+            title = { Text("Front side done") },
+            text = { Text("Now flip the card over and scan the back.", color = AppColors.TextSecondary) },
+            confirmButton = {
+                Button(onClick = {
+                    askForBack = false
+                    scanIdSide()
+                }, shape = RoundedCornerShape(Radius.m)) { Text("Scan back") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    askForBack = false
+                    idFront?.let { buildIdCard(it, null) }
+                }) { Text("Front only", color = AppColors.TextSecondary) }
+            },
+        )
+    }
     if (showStorageIntro) {
         StorageIntroDialog(
             onAllow = {
@@ -377,7 +475,7 @@ private fun DashboardTab(
 ) {
     val pages = docs.sumOf { it.pages.coerceAtLeast(0) }
     val storage = docs.sumOf { it.sizeBytes }
-    val featured = listOf(Tool.Sign, Tool.Form, Tool.Word, Tool.Watermark, Tool.Merge, Tool.Compress, Tool.Text, Tool.Protect)
+    val featured = listOf(Tool.IdCard, Tool.Sign, Tool.Form, Tool.Word, Tool.Watermark, Tool.Merge, Tool.Compress, Tool.Text)
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),

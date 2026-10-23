@@ -145,6 +145,40 @@ object PdfTools {
         }
     }
 
+    /**
+     * Puts both sides of an ID card on one A4 page at real card size (85.6 x 54 mm),
+     * front on the upper half and back on the lower half, like a photocopy.
+     */
+    fun idCardPdf(context: Context, front: Uri, back: Uri?, out: File) {
+        val cardLong = 85.6f / 25.4f * 72f // mm -> points
+        val cardShort = 54f / 25.4f * 72f
+        PDDocument().use { doc ->
+            val page = PDPage(PDRectangle.A4)
+            doc.addPage(page)
+            val pw = PDRectangle.A4.width
+            val ph = PDRectangle.A4.height
+            val sides = listOfNotNull(front, back)
+            PDPageContentStream(doc, page).use { cs ->
+                sides.forEachIndexed { i, uri ->
+                    val bitmap = ImageTools.load(context, uri, 2000) ?: throw IOException("Couldn't read the scan")
+                    val portrait = bitmap.height > bitmap.width
+                    // Fit the scan inside a card-sized box with the same orientation
+                    val boxW = if (portrait) cardShort else cardLong
+                    val boxH = if (portrait) cardLong else cardShort
+                    val scale = min(boxW / bitmap.width, boxH / bitmap.height)
+                    val w = bitmap.width * scale
+                    val h = bitmap.height * scale
+                    // Centres at 30% and 70% down the page (PDF y goes up)
+                    val centerY = if (sides.size == 1) ph / 2f else if (i == 0) ph * 0.70f else ph * 0.30f
+                    val image = JPEGFactory.createFromImage(doc, bitmap, 0.92f)
+                    cs.drawImage(image, (pw - w) / 2f, centerY - h / 2f, w, h)
+                    bitmap.recycle()
+                }
+            }
+            doc.save(out)
+        }
+    }
+
     /** Puts each photo on its own A4 page (landscape photos get a landscape page). */
     fun imagesToPdf(context: Context, uris: List<Uri>, out: File) {
         PDDocument().use { doc ->

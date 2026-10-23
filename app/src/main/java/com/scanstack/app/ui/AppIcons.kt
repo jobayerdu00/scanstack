@@ -384,6 +384,18 @@ object AppIcons {
         }
     }
 
+    val IdCard: ImageVector by lazy {
+        icon("IdCard") {
+            roundRect(3f, 5f, 18f, 14f, 2.2f)
+            circle(8.6f, 10.8f, 1.9f)
+            moveTo(5.8f, 16f)
+            curveTo(6.3f, 14.6f, 7.3f, 13.9f, 8.6f, 13.9f)
+            curveTo(9.9f, 13.9f, 10.9f, 14.6f, 11.4f, 16f)
+            moveTo(13.8f, 9.8f); horizontalLineTo(18f)
+            moveTo(13.8f, 12.8f); horizontalLineTo(16.8f)
+        }
+    }
+
     /** Settings: two sliders. */
     val Settings: ImageVector by lazy {
         icon("Settings") {

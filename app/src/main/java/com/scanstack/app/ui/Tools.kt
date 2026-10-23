@@ -53,6 +53,7 @@ enum class Tool(
     Scan("Scan", "Use the camera, auto-crop and enhance", AppIcons.Scan, ToolGroup.Create, false, accent = true),
     Import("Import PDF", "Add PDFs from your phone", AppIcons.Import, ToolGroup.Create, false),
     Photos("Photos to PDF", "Turn pictures into a PDF", AppIcons.Image, ToolGroup.Create, false),
+    IdCard("ID card", "Scan both sides onto one page", AppIcons.IdCard, ToolGroup.Create, false, accent = true),
     Word("Word to PDF", "Convert .docx documents to PDF", AppIcons.Convert, ToolGroup.Create, false),
     Sign("Fill & Sign", "Add your signature, text, dates and ticks", AppIcons.Signature, ToolGroup.Edit, true),
     Form("Fill form", "Type into a PDF's form fields", AppIcons.Form, ToolGroup.Edit, true),
