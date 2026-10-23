@@ -1,8 +1,20 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 
 package com.scanstack.app.ui
 
 import android.app.Activity
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
@@ -123,6 +135,20 @@ fun ViewerScreen(
     var ocrText by remember(file) { mutableStateOf<String?>(null) }
     var menu by remember { mutableStateOf(false) }
 
+    // ----- Page selection (long-press a page) -----
+    var selecting by remember(file) { mutableStateOf(false) }
+    val selectedPages = remember(file) { mutableStateListOf<Int>() }
+    var confirmDeletePages by remember { mutableStateOf(false) }
+    val haptics = LocalHapticFeedback.current
+    fun exitSelection() {
+        selecting = false
+        selectedPages.clear()
+    }
+    fun togglePage(index: Int) {
+        if (index in selectedPages) selectedPages.remove(index) else selectedPages.add(index)
+    }
+    BackHandler(enabled = selecting) { exitSelection() }
+
     LaunchedEffect(file, reload) {
         if (!file.exists()) {
             onBack()
@@ -183,7 +209,7 @@ fun ViewerScreen(
             message(if (added == 1) "Page added" else "$added pages added")
             if (before > 0) {
                 kotlinx.coroutines.delay(300)
-                runCatching { listState.animateScrollToItem(before) }
+                runCatching { listState.animateScrollToItem(before + 1) }
             }
         }
     }
@@ -233,7 +259,34 @@ fun ViewerScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            if (selecting) {
+                val total = info?.pageCount ?: 0
+                TopAppBar(
+                    title = { Text("${selectedPages.size} selected") },
+                    navigationIcon = {
+                        IconButton(onClick = { exitSelection() }) {
+                            Icon(Icons.Filled.Close, contentDescription = "Cancel selection")
+                        }
+                    },
+                    actions = {
+                        TextButton(onClick = {
+                            if (selectedPages.size == total) {
+                                selectedPages.clear()
+                            } else {
+                                selectedPages.clear()
+                                selectedPages.addAll(0 until total)
+                            }
+                        }) {
+                            Text(if (selectedPages.size == total && total > 0) "Unselect all" else "Select all")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ),
+                )
+            } else TopAppBar(
                 title = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -273,7 +326,49 @@ fun ViewerScreen(
             )
         },
         bottomBar = {
-            if (current != null) {
+            if (selecting) {
+                Surface(tonalElevation = 3.dp, shadowElevation = 8.dp) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        OutlinedButton(
+                            onClick = {
+                                val pages = selectedPages.sorted()
+                                work("Copying pages…") {
+                                    val label = if (pages.size == 1) "page ${pages[0] + 1}" else "${pages.size} pages"
+                                    val out = repo.newFile("$name ($label)")
+                                    withContext(Dispatchers.IO) { PdfTools.extractPages(file, pages, out) }
+                                    exitSelection()
+                                    onOpen(out)
+                                }
+                            },
+                            enabled = selectedPages.isNotEmpty(),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Icon(Icons.Outlined.ContentCut, contentDescription = null, modifier = Modifier.size(18.dp))
+                            HSpace(6)
+                            Text("New PDF")
+                        }
+                        Button(
+                            onClick = { confirmDeletePages = true },
+                            enabled = selectedPages.isNotEmpty(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError,
+                            ),
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                            HSpace(6)
+                            Text(if (selectedPages.isEmpty()) "Delete" else "Delete (${selectedPages.size})")
+                        }
+                    }
+                }
+            } else if (current != null) {
                 Surface(tonalElevation = 3.dp, shadowElevation = 8.dp) {
                     LazyRow(
                         modifier = Modifier
@@ -321,13 +416,85 @@ fun ViewerScreen(
                         verticalArrangement = Arrangement.spacedBy(14.dp),
                         modifier = Modifier.fillMaxSize(),
                     ) {
+                        if (current.pageCount > 1 && !selecting) {
+                            item {
+                                Text(
+                                    "Tip: press and hold a page to select, delete or copy pages",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
+                        }
                         items(current.pageCount) { index ->
+                            val isSelected = selecting && index in selectedPages
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Card(
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                                    modifier = Modifier.fillMaxWidth(),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 6.dp else 2.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .then(
+                                            if (isSelected) {
+                                                Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
+                                            } else {
+                                                Modifier
+                                            },
+                                        )
+                                        .combinedClickable(
+                                            onClick = { if (selecting) togglePage(index) },
+                                            onLongClick = {
+                                                if (canEdit && current.pageCount > 0) {
+                                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                                    if (!selecting) {
+                                                        selecting = true
+                                                        selectedPages.clear()
+                                                        selectedPages.add(index)
+                                                    } else {
+                                                        togglePage(index)
+                                                    }
+                                                }
+                                            },
+                                        ),
                                 ) {
-                                    PdfPageImage(file, index, widthPx, fillWidth = true)
+                                    Box {
+                                        PdfPageImage(file, index, widthPx, fillWidth = true)
+                                        if (selecting) {
+                                            if (isSelected) {
+                                                Box(
+                                                    Modifier
+                                                        .matchParentSize()
+                                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                                                )
+                                            }
+                                            Box(
+                                                Modifier
+                                                    .align(Alignment.TopEnd)
+                                                    .padding(10.dp)
+                                                    .size(30.dp)
+                                                    .clip(CircleShape)
+                                                    .background(
+                                                        if (isSelected) MaterialTheme.colorScheme.primary
+                                                        else androidx.compose.ui.graphics.Color.White.copy(alpha = 0.9f),
+                                                    )
+                                                    .border(
+                                                        2.dp,
+                                                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                                        CircleShape,
+                                                    ),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                if (isSelected) {
+                                                    Icon(
+                                                        Icons.Filled.Check,
+                                                        contentDescription = "Selected",
+                                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                                        modifier = Modifier.size(18.dp),
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                                 Spacer(Modifier.height(6.dp))
                                 Text(
@@ -494,6 +661,44 @@ fun ViewerScreen(
             },
             dismissButton = { TextButton(onClick = { ocrText = null }) { Text("Close") } },
         )
+    }
+
+    if (confirmDeletePages) {
+        val total = info?.pageCount ?: 0
+        val count = selectedPages.size
+        if (count >= total) {
+            AlertDialog(
+                onDismissRequest = { confirmDeletePages = false },
+                title = { Text("Can't delete every page") },
+                text = { Text("A PDF needs at least one page. To remove the whole document, use Delete in the ⋮ menu.") },
+                confirmButton = { TextButton(onClick = { confirmDeletePages = false }) { Text("OK") } },
+            )
+        } else {
+            ConfirmDialog(
+                title = if (count == 1) "Delete this page?" else "Delete $count pages?",
+                body = "This removes the selected " + (if (count == 1) "page" else "pages") + " from \"$name\". It can't be undone.",
+                confirmText = "Delete",
+                onDismiss = { confirmDeletePages = false },
+                onConfirm = {
+                    confirmDeletePages = false
+                    val pages = selectedPages.toList()
+                    work("Deleting pages…") {
+                        val tmp = repo.tempFile()
+                        try {
+                            withContext(Dispatchers.IO) {
+                                PdfTools.deletePages(file, pages, tmp)
+                                repo.replace(file, tmp)
+                            }
+                        } finally {
+                            tmp.delete()
+                        }
+                        exitSelection()
+                        reload++
+                        message(if (pages.size == 1) "Page deleted" else "${pages.size} pages deleted")
+                    }
+                },
+            )
+        }
     }
 
     busy?.let { BusyDialog(it) }

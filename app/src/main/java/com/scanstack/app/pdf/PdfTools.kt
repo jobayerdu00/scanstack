@@ -110,6 +110,14 @@ object PdfTools {
         }
     }
 
+    /** Removes the given pages (0-based) and saves the rest to [out]. */
+    fun deletePages(file: File, pages: Collection<Int>, out: File) {
+        PDDocument.load(file).use { doc ->
+            pages.distinct().sortedDescending().forEach { if (it in 0 until doc.numberOfPages) doc.removePage(it) }
+            doc.save(out)
+        }
+    }
+
     /** Rebuilds the PDF from compressed page images. Text is no longer selectable afterwards. */
     fun compress(file: File, out: File, level: CompressLevel) {
         ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { pfd ->
