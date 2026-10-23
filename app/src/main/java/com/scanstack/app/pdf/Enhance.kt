@@ -30,8 +30,8 @@ data class EnhanceSettings(
 enum class EnhancePreset(val label: String, val settings: EnhanceSettings) {
     Original("Original", EnhanceSettings(auto = false)),
     Auto("Auto", EnhanceSettings(auto = true, brightness = 0.05f, contrast = 0.1f, color = 0.1f)),
-    Bright("Bright", EnhanceSettings(auto = true, brightness = 0.25f, contrast = 0.15f, color = 0.2f)),
-    Vivid("Vivid color", EnhanceSettings(auto = true, brightness = 0.15f, contrast = 0.25f, color = 0.55f)),
+    Bright("Bright", EnhanceSettings(auto = true, brightness = 0.3f, contrast = 0.05f, color = 0.25f)),
+    Vivid("Vivid color", EnhanceSettings(auto = true, brightness = 0.2f, contrast = 0.15f, color = 0.6f)),
 }
 
 object Enhance {
@@ -63,7 +63,7 @@ object Enhance {
             }
             return 255
         }
-        val black = percentile(0.01f).coerceAtMost(80)
+        val black = percentile(0.005f).coerceAtMost(40) // never crush photos/faces
         val white = percentile(0.96f).coerceAtLeast(black + 60).coerceAtMost(255)
         return black to white
     }
