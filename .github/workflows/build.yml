@@ -25,7 +25,16 @@ jobs:
           gradle-version: "8.10.2"
 
       - name: Build test APK
-        run: gradle assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          gradle assembleDebug --stacktrace 2>&1 | tee build.log
+
+      # Puts compiler errors in the run summary so they're easy to read
+      - name: Report compile errors
+        if: failure()
+        run: |
+          msg=$(grep -E "^e: |What went wrong" -A2 build.log | head -80 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          echo "::error title=Build errors::${msg}"
 
       - name: Name the APK
         run: cp app/build/outputs/apk/debug/app-debug.apk ScanStack.apk
