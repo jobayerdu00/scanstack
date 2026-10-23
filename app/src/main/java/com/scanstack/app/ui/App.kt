@@ -20,8 +20,9 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * Top-level navigation. The route is a simple string so it survives the app being
- * paused while the camera scanner is open: "home", "merge" or "view:<file path>".
+ * Navigation is a small back stack of route strings, saved so it survives the app being
+ * paused while the camera scanner is open. Routes:
+ *  "home", "merge", "view:<path>", "view:<path>|<action>", "sign:<path>", "form:<path>"
  */
 @Composable
 fun App(
@@ -30,18 +31,42 @@ fun App(
     incoming: Uri?,
     onIncomingHandled: () -> Unit,
 ) {
-    var route by rememberSaveable { mutableStateOf("home") }
+    var stackText by rememberSaveable { mutableStateOf("home") }
+    val stack = stackText.split('\n')
+    val route = stack.last()
     var version by remember { mutableIntStateOf(0) }
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     val message: (String) -> Unit = { text -> scope.launch { snackbar.showSnackbar(text) } }
     val refresh: () -> Unit = { version++ }
-    val open: (File) -> Unit = { route = "view:" + it.absolutePath }
-    val goHome: () -> Unit = {
-        refresh()
-        route = "home"
+    fun push(r: String) {
+        version++
+        stackText = (stack + r).joinToString("\n")
     }
+    fun replaceTop(r: String) {
+        version++
+        stackText = (stack.dropLast(1) + r).joinToString("\n")
+    }
+    fun pop() {
+        version++
+        stackText = if (stack.size > 1) stack.dropLast(1).joinToString("\n") else "home"
+    }
+    val open: (File) -> Unit = { push("view:" + it.absolutePath) }
+    fun openTool(tool: Tool, file: File) {
+        val path = file.absolutePath
+        when (tool) {
+            Tool.Sign -> push("sign:$path")
+            Tool.Form -> push("form:$path")
+            Tool.Compress -> push("view:$path|compress")
+            Tool.Text -> push("view:$path|text")
+            Tool.Protect -> push("view:$path|password")
+            Tool.Extract -> push("view:$path|extract")
+            else -> push("view:$path")
+        }
+    }
+
+    BackHandler(enabled = stack.size > 1) { pop() }
 
     // A PDF opened from another app (Files, Gmail, WhatsApp...)
     LaunchedEffect(incoming) {
@@ -50,43 +75,60 @@ fun App(
             runCatching { repo.importUri(uri, repo.displayName(uri) ?: "Opened ${timestamp()}") }.getOrNull()
         }
         onIncomingHandled()
-        if (file != null) {
-            refresh()
-            open(file)
-        } else {
-            message("Couldn't open that file")
-        }
+        if (file != null) open(file) else message("Couldn't open that file")
     }
 
     when {
-        route == "merge" -> {
-            BackHandler(onBack = goHome)
-            MergeScreen(
-                repo = repo,
-                snackbar = snackbar,
-                message = message,
-                onBack = goHome,
-                onDone = {
-                    refresh()
-                    open(it)
-                },
-            )
-        }
-        route.startsWith("view:") -> {
-            val file = File(route.removePrefix("view:"))
-            BackHandler(onBack = goHome)
-            ViewerScreen(
+        route == "merge" -> MergeScreen(
+            repo = repo,
+            snackbar = snackbar,
+            message = message,
+            onBack = { pop() },
+            onDone = { replaceTop("view:" + it.absolutePath) },
+        )
+
+        route.startsWith("sign:") -> {
+            val file = File(route.removePrefix("sign:"))
+            SignScreen(
                 repo = repo,
                 file = file,
                 snackbar = snackbar,
                 message = message,
-                onBack = goHome,
-                onOpen = {
-                    refresh()
-                    open(it)
-                },
+                onBack = { pop() },
+                onDone = { replaceTop("view:" + it.absolutePath) },
             )
         }
+
+        route.startsWith("form:") -> {
+            val file = File(route.removePrefix("form:"))
+            FormScreen(
+                repo = repo,
+                file = file,
+                snackbar = snackbar,
+                message = message,
+                onBack = { pop() },
+                onDone = { replaceTop("view:" + it.absolutePath) },
+                onUseFillAndSign = { replaceTop("sign:" + file.absolutePath) },
+            )
+        }
+
+        route.startsWith("view:") -> {
+            val parts = route.removePrefix("view:").split('|')
+            val file = File(parts[0])
+            ViewerScreen(
+                repo = repo,
+                file = file,
+                initialAction = parts.getOrNull(1),
+                onActionConsumed = { replaceTop("view:" + file.absolutePath) },
+                snackbar = snackbar,
+                message = message,
+                onBack = { pop() },
+                onOpen = { push("view:" + it.absolutePath) },
+                onReplace = { replaceTop("view:" + it.absolutePath) },
+                onTool = { tool -> openTool(tool, file) },
+            )
+        }
+
         else -> HomeScreen(
             repo = repo,
             activity = activity,
@@ -95,7 +137,8 @@ fun App(
             message = message,
             refresh = refresh,
             onOpen = open,
-            onMerge = { route = "merge" },
+            onMerge = { push("merge") },
+            onTool = { tool, file -> openTool(tool, file) },
         )
     }
 }

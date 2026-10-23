@@ -5,7 +5,31 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+
+/** Brand and tool colors used across the app. */
+object Brand {
+    val Navy = Color(0xFF0B2545)
+    val Deep = Color(0xFF0B4F6C)
+    val Teal = Color(0xFF0E8A85)
+    val Mint = Color(0xFF34C3A9)
+    val Amber = Color(0xFFF5A524)
+    val Orange = Color(0xFFF2703A)
+    val Blue = Color(0xFF2F6FED)
+    val Indigo = Color(0xFF4F46E5)
+    val Violet = Color(0xFF8B5CF6)
+    val Pink = Color(0xFFE5487D)
+    val Red = Color(0xFFE5484D)
+    val Green = Color(0xFF1FA463)
+    val Cyan = Color(0xFF0EA5C6)
+    val Slate = Color(0xFF475569)
+    val Brown = Color(0xFFA0643B)
+
+    val header = Brush.linearGradient(listOf(Navy, Deep, Teal))
+    val scanCard = Brush.linearGradient(listOf(Color(0xFFF7B733), Color(0xFFF2703A)))
+    val importCard = Brush.linearGradient(listOf(Color(0xFF4F7BF7), Color(0xFF6D4AE0)))
+}
 
 private val LightColors = lightColorScheme(
     primary = Color(0xFF00696B),

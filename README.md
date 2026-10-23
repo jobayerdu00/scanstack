@@ -2,10 +2,13 @@
 
 Android document scanner and PDF toolkit.
 
-## What it does (version 1.0)
+## What it does (version 1.1)
 - **Scan** documents with the camera: automatic edge detection, cropping, filters, multi-page (Google ML Kit, on-device)
 - **Import** PDFs from the phone, or open PDFs from other apps
 - **Photos to PDF**
+- **Fill & Sign**: draw and save a signature, add text, dates, ticks and crosses anywhere on a page
+- **Fill form**: type into PDF form fields (text, checkboxes, radio buttons, dropdowns), optionally lock the answers
+- **Word to PDF**: convert .docx (and .txt) files on the phone
 - **Merge** PDFs in any order
 - **Compress** PDFs (light / medium / strong)
 - **Extract pages** into a new PDF

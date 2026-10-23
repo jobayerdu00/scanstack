@@ -21,6 +21,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -91,10 +95,14 @@ private enum class ViewerDialog { Rename, Delete, Compress, Lock, Unlock, Extrac
 fun ViewerScreen(
     repo: DocRepository,
     file: File,
+    initialAction: String?,
+    onActionConsumed: () -> Unit,
     snackbar: SnackbarHostState,
     message: (String) -> Unit,
     onBack: () -> Unit,
     onOpen: (File) -> Unit,
+    onReplace: (File) -> Unit,
+    onTool: (Tool) -> Unit,
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
@@ -154,6 +162,22 @@ fun ViewerScreen(
         }
     }
 
+    // Opened from a tool on the dashboard: start that tool once the document is ready
+    LaunchedEffect(current, initialAction) {
+        if (current == null || initialAction == null) return@LaunchedEffect
+        onActionConsumed()
+        if (current.locked && initialAction != "password") {
+            dialog = ViewerDialog.Unlock
+            return@LaunchedEffect
+        }
+        when (initialAction) {
+            "compress" -> dialog = ViewerDialog.Compress
+            "text" -> extractText()
+            "extract" -> dialog = ViewerDialog.Extract
+            "password" -> dialog = if (current.encrypted) ViewerDialog.Unlock else ViewerDialog.Lock
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -197,24 +221,28 @@ fun ViewerScreen(
         },
         bottomBar = {
             if (current != null) {
-                Surface(tonalElevation = 3.dp) {
-                    Row(
-                        Modifier
+                Surface(tonalElevation = 3.dp, shadowElevation = 8.dp) {
+                    LazyRow(
+                        modifier = Modifier
                             .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
+                            .navigationBarsPadding(),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         if (canEdit) {
-                            BarAction("Get text", Icons.Outlined.TextFields) { extractText() }
-                            BarAction("Compress", Icons.Outlined.Compress) { dialog = ViewerDialog.Compress }
+                            item { BarAction(Tool.Sign) { onTool(Tool.Sign) } }
+                            item { BarAction(Tool.Form) { onTool(Tool.Form) } }
+                            item { BarAction(Tool.Text) { extractText() } }
+                            item { BarAction(Tool.Compress) { dialog = ViewerDialog.Compress } }
                         }
-                        if (current.encrypted) {
-                            BarAction("Unlock", Icons.Outlined.LockOpen) { dialog = ViewerDialog.Unlock }
-                        } else {
-                            BarAction("Password", Icons.Outlined.Lock) { dialog = ViewerDialog.Lock }
+                        item {
+                            if (current.encrypted) {
+                                BarAction(Tool.Protect, "Unlock") { dialog = ViewerDialog.Unlock }
+                            } else {
+                                BarAction(Tool.Protect) { dialog = ViewerDialog.Lock }
+                            }
                         }
-                        BarAction("Share", Icons.Outlined.Share) { shareFile(context, file) }
+                        if (canEdit) item { BarAction(Tool.Extract, "Pages") { dialog = ViewerDialog.Extract } }
                     }
                 }
             }
@@ -271,7 +299,7 @@ fun ViewerScreen(
                 dialog = null
                 work("Renaming…") {
                     val renamed = withContext(Dispatchers.IO) { repo.rename(file, newName) }
-                    if (renamed != file) onOpen(renamed)
+                    if (renamed != file) onReplace(renamed)
                 }
             },
         )
@@ -416,16 +444,18 @@ fun ViewerScreen(
 }
 
 @Composable
-private fun BarAction(label: String, icon: ImageVector, onClick: () -> Unit) {
+private fun BarAction(tool: Tool, label: String = tool.label, onClick: () -> Unit) {
     Column(
         Modifier
+            .width(76.dp)
+            .clip(RoundedCornerShape(14.dp))
             .clickable(onClick = onClick, role = Role.Button)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.height(2.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall)
+        ToolIcon(tool, 40.dp)
+        Spacer(Modifier.height(4.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
     }
 }
 

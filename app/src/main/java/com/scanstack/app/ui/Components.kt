@@ -226,13 +226,13 @@ fun MenuItem(text: String, icon: ImageVector, onClick: () -> Unit) {
 }
 
 @Composable
-fun Thumbnail(doc: Doc, modifier: Modifier = Modifier) {
+fun Thumbnail(doc: Doc, modifier: Modifier = Modifier, widthPx: Int = 180) {
     if (doc.pages < 0) {
         Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
             Icon(Icons.Outlined.Lock, contentDescription = "Locked", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     } else {
-        PdfPageImage(doc.file, 0, 180, modifier, contentScale = ContentScale.Crop)
+        PdfPageImage(doc.file, 0, widthPx, modifier, contentScale = ContentScale.Crop)
     }
 }
 
