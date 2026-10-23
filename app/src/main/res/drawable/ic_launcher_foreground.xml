@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- ScanStack app icon: white document with teal scanning corners on brand blue. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -7,21 +8,21 @@
     <!-- page -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M42,34h17l11,11v27a2,2 0,0 1,-2 2H42a2,2 0,0 1,-2 -2V36a2,2 0,0 1,2 -2z" />
+        android:pathData="M44,32H59L68,41V73a3,3 0,0 1,-3 3H44a3,3 0,0 1,-3 -3V35a3,3 0,0 1,3 -3z" />
     <!-- folded corner -->
     <path
-        android:fillColor="#9CE2E0"
-        android:pathData="M59,34l11,11H61a2,2 0,0 1,-2 -2z" />
+        android:fillColor="#C9D8FF"
+        android:pathData="M59,32V38a3,3 0,0 0,3 3H68z" />
     <!-- text lines -->
     <path
-        android:fillColor="#00696B"
-        android:pathData="M45,51h20v3H45zM45,57h20v3H45zM45,63h13v3H45z" />
-    <!-- scan corners -->
+        android:fillColor="#2457D6"
+        android:pathData="M47.5,50h13a1.5,1.5 0,0 1,0 3h-13a1.5,1.5 0,0 1,0 -3zM47.5,57h13a1.5,1.5 0,0 1,0 3h-13a1.5,1.5 0,0 1,0 -3zM47.5,64h7a1.5,1.5 0,0 1,0 3h-7a1.5,1.5 0,0 1,0 -3z" />
+    <!-- scanning corners -->
     <path
         android:fillColor="#00000000"
-        android:strokeColor="#F2C863"
-        android:strokeWidth="3.5"
+        android:strokeColor="#12B8A6"
+        android:strokeWidth="3.6"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M32,41v-9h9M76,41v-9h-9M32,67v9h9M76,67v9h-9" />
+        android:pathData="M31,40V34a3,3 0,0 1,3 -3H40M68,31H74a3,3 0,0 1,3 3V40M77,68V74a3,3 0,0 1,-3 3H68M40,77H34a3,3 0,0 1,-3 -3V68" />
 </vector>

@@ -189,9 +189,10 @@ fun SignScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = appBarColors(),
                 title = { Text("Fill & Sign") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(AppIcons.Back, contentDescription = "Back") }
                 },
                 actions = {
                     Button(
@@ -203,7 +204,7 @@ fun SignScreen(
             )
         },
         bottomBar = {
-            Surface(tonalElevation = 3.dp, shadowElevation = 8.dp) {
+            Surface(color = AppColors.Card, modifier = Modifier.topHairline()) {
                 Column(Modifier.navigationBarsPadding().padding(vertical = 8.dp)) {
                     Row(
                         Modifier
@@ -222,7 +223,7 @@ fun SignScreen(
                                     .background(c)
                                     .border(
                                         width = if (ink == i) 3.dp else 0.dp,
-                                        color = MaterialTheme.colorScheme.primary,
+                                        color = AppColors.Teal,
                                         shape = CircleShape,
                                     )
                                     .clickable {
@@ -243,20 +244,20 @@ fun SignScreen(
                     }
                     Spacer(Modifier.height(6.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        SignTool("Signature", Icons.Outlined.Draw, Brand.Pink) {
+                        SignTool("Signature", AppIcons.Signature, AppColors.TealDark, AppColors.TealSubtle) {
                             if (signature == null) showPad = true else showSignatureChoice = true
                         }
-                        SignTool("Text", Icons.Outlined.TextFields, Brand.Blue) {
+                        SignTool("Text", AppIcons.TextTool, AppColors.Primary) {
                             editing = Stamp(id = 0, page = page, kind = StampKind.Text, x = 0f, y = 0f, width = 0f)
                         }
-                        SignTool("Date", Icons.Outlined.Today, Brand.Violet) {
+                        SignTool("Date", AppIcons.Calendar, AppColors.Primary) {
                             add(
                                 StampKind.Text,
                                 TextChoice(SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date()), TextFont.Sans, false, false, false),
                             )
                         }
-                        SignTool("Check", Icons.Outlined.Check, Brand.Green) { add(StampKind.Check) }
-                        SignTool("Cross", Icons.Outlined.Clear, Brand.Red) { add(StampKind.Cross) }
+                        SignTool("Check", AppIcons.Check, AppColors.Primary) { add(StampKind.Check) }
+                        SignTool("Cross", AppIcons.Close, AppColors.Primary) { add(StampKind.Cross) }
                     }
                 }
             }
@@ -267,7 +268,7 @@ fun SignScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(MaterialTheme.colorScheme.surfaceContainer),
+                .background(AppColors.Canvas),
         ) {
             BoxWithConstraints(
                 Modifier
@@ -338,11 +339,11 @@ fun SignScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     IconButton(onClick = { page = max(0, page - 1); selected = null }, enabled = page > 0) {
-                        Icon(Icons.Filled.ChevronLeft, contentDescription = "Previous page")
+                        Icon(AppIcons.ChevronLeft, contentDescription = "Previous page")
                     }
                     Text("Page ${page + 1} of $pageCount", style = MaterialTheme.typography.labelLarge)
                     IconButton(onClick = { page = min(pageCount - 1, page + 1); selected = null }, enabled = page < pageCount - 1) {
-                        Icon(Icons.Filled.ChevronRight, contentDescription = "Next page")
+                        Icon(AppIcons.ChevronRight, contentDescription = "Next page")
                     }
                 }
             }
@@ -466,15 +467,15 @@ private fun StampView(
     ) {
         Image(art.asImageBitmap(), contentDescription = null, modifier = Modifier.fillMaxSize())
         if (isSelected) {
-            Handle(Icons.Filled.Close, Color(0xFFDC2626), Modifier.align(Alignment.TopEnd).offset(12.dp, (-12).dp)) {
+            Handle(AppIcons.Close, Color(0xFFDC2626), Modifier.align(Alignment.TopEnd).offset(12.dp, (-12).dp)) {
                 Modifier.clickable { onDelete() }
             }
             if (onEdit != null) {
-                Handle(Icons.Filled.Edit, primary, Modifier.align(Alignment.TopStart).offset((-12).dp, (-12).dp)) {
+                Handle(AppIcons.Edit, primary, Modifier.align(Alignment.TopStart).offset((-12).dp, (-12).dp)) {
                     Modifier.clickable { onEdit() }
                 }
             }
-            Handle(Icons.Filled.OpenInFull, primary, Modifier.align(Alignment.BottomEnd).offset(12.dp, 12.dp)) {
+            Handle(AppIcons.Resize, primary, Modifier.align(Alignment.BottomEnd).offset(12.dp, 12.dp)) {
                 Modifier.pointerInput(stamp.id, boxW) {
                     detectDragGestures { change, amount ->
                         change.consume()
@@ -502,24 +503,16 @@ private fun Handle(icon: ImageVector, color: Color, modifier: Modifier, action: 
 }
 
 @Composable
-private fun SignTool(label: String, icon: ImageVector, tint: Color, onClick: () -> Unit) {
+private fun SignTool(label: String, icon: ImageVector, tint: Color, tile: Color = AppColors.BlueSubtle, onClick: () -> Unit) {
     Column(
         Modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(Radius.m))
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(horizontal = Space.s, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(tint.copy(alpha = 0.14f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, contentDescription = null, tint = tint)
-        }
-        Spacer(Modifier.height(4.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall)
+        ToolIcon(icon, tint, 44.dp, tile)
+        Spacer(Modifier.height(Space.xs))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = AppColors.Text)
     }
 }

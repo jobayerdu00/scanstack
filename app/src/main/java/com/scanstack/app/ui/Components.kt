@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.scanstack.app.ui
 
 import android.content.Context
@@ -21,7 +23,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -38,6 +48,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -126,9 +138,9 @@ fun PdfPageImage(
             val m = if (fillWidth) modifier.fillMaxWidth().aspectRatio(0.707f) else modifier
             Box(m.background(Color.White), contentAlignment = Alignment.Center) {
                 if (s is PageState.Loading) {
-                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = AppColors.Teal)
                 } else {
-                    Icon(Icons.Outlined.Lock, contentDescription = "Locked", tint = Color(0xFF6F7979))
+                    Icon(AppIcons.Lock, contentDescription = "Locked", tint = AppColors.TextMuted)
                 }
             }
         }
@@ -151,18 +163,20 @@ fun TextInputDialog(
     var text by remember { mutableStateOf(initial) }
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = AppColors.Card,
         title = { Text(title) },
         text = {
             Column {
                 if (supporting != null) {
-                    Text(supporting, style = MaterialTheme.typography.bodyMedium)
-                    Spacer(Modifier.height(12.dp))
+                    Text(supporting, style = MaterialTheme.typography.bodyMedium, color = AppColors.TextSecondary)
+                    Spacer(Modifier.height(Space.m))
                 }
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
                     label = { Text(label) },
                     singleLine = true,
+                    shape = RoundedCornerShape(Radius.m),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = if (numbersAndSymbols) KeyboardType.Uri else KeyboardType.Text,
                     ),
@@ -173,7 +187,7 @@ fun TextInputDialog(
         confirmButton = {
             TextButton(onClick = { onConfirm(text) }, enabled = text.isNotBlank()) { Text(confirmText) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = AppColors.TextSecondary) } },
     )
 }
 
@@ -187,12 +201,17 @@ fun ConfirmDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = AppColors.Card,
+        icon = { ToolIcon(AppIcons.Trash, AppColors.Error, 44.dp, AppColors.ErrorSubtle) },
         title = { Text(title) },
-        text = { Text(body) },
+        text = { Text(body, color = AppColors.TextSecondary) },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text(confirmText, color = MaterialTheme.colorScheme.error) }
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = AppColors.Error, contentColor = Color.White),
+            ) { Text(confirmText) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = AppColors.TextSecondary) } },
     )
 }
 
@@ -203,33 +222,67 @@ fun BusyDialog(label: String) {
         onDismissRequest = {},
         properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
     ) {
-        Card {
+        Card(
+            shape = RoundedCornerShape(Radius.l),
+            colors = CardDefaults.cardColors(containerColor = AppColors.Card),
+        ) {
             Row(
-                Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
+                Modifier.padding(horizontal = Space.xl, vertical = 20.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(Space.l),
             ) {
-                CircularProgressIndicator(Modifier.size(28.dp), strokeWidth = 3.dp)
-                Text(label, style = MaterialTheme.typography.bodyLarge)
+                CircularProgressIndicator(
+                    Modifier.size(28.dp),
+                    strokeWidth = 3.dp,
+                    color = AppColors.Teal,
+                    trackColor = AppColors.TealSubtle,
+                )
+                Text(label, style = MaterialTheme.typography.bodyLarge, color = AppColors.Text)
             }
         }
     }
 }
 
 @Composable
-fun MenuItem(text: String, icon: ImageVector, onClick: () -> Unit) {
+fun MenuItem(text: String, icon: ImageVector, danger: Boolean = false, onClick: () -> Unit) {
+    val color = if (danger) AppColors.Error else AppColors.Text
     DropdownMenuItem(
-        text = { Text(text) },
-        leadingIcon = { Icon(icon, contentDescription = null) },
+        text = { Text(text, style = MaterialTheme.typography.bodyMedium, color = color) },
+        leadingIcon = { Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(20.dp)) },
         onClick = onClick,
     )
 }
 
+/** White app bar used on document and editing screens, with a hairline underneath. */
+@Composable
+fun appBarColors() = TopAppBarDefaults.topAppBarColors(
+    containerColor = AppColors.Card,
+    scrolledContainerColor = AppColors.Card,
+    titleContentColor = AppColors.Text,
+    navigationIconContentColor = AppColors.Text,
+    actionIconContentColor = AppColors.Text,
+)
+
+/** Standard back button. */
+@Composable
+fun BackButton(onBack: () -> Unit) {
+    IconButton(onClick = onBack) { Icon(AppIcons.Back, contentDescription = "Back") }
+}
+
+/** Draws a 1 dp border-colored line along the top edge (for bottom bars). */
+fun Modifier.topHairline(): Modifier = this.drawBehind {
+    drawLine(AppColors.Border, Offset(0f, 0f), Offset(size.width, 0f), 1.dp.toPx())
+}
+
+/** Thin divider in the border color. */
+@Composable
+fun Hairline(modifier: Modifier = Modifier) = HorizontalDivider(modifier, thickness = 1.dp, color = AppColors.Border)
+
 @Composable
 fun Thumbnail(doc: Doc, modifier: Modifier = Modifier, widthPx: Int = 180) {
     if (doc.pages < 0) {
-        Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-            Icon(Icons.Outlined.Lock, contentDescription = "Locked", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Box(modifier.background(AppColors.BlueSubtle), contentAlignment = Alignment.Center) {
+            Icon(AppIcons.Lock, contentDescription = "Locked", tint = AppColors.Primary, modifier = Modifier.size(20.dp))
         }
     } else {
         PdfPageImage(doc.file, 0, widthPx, modifier, contentScale = ContentScale.Crop)

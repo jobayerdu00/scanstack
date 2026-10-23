@@ -111,7 +111,7 @@ private fun InkPicker(selected: Int, onSelect: (Int) -> Unit) {
                     .size(28.dp)
                     .clip(CircleShape)
                     .background(c)
-                    .border(if (selected == i) 3.dp else 0.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    .border(if (selected == i) 3.dp else 0.dp, AppColors.Teal, CircleShape)
                     .clickable { onSelect(i) },
             )
         }
@@ -183,7 +183,7 @@ fun SignatureCreatorDialog(onDismiss: () -> Unit, onSave: (Bitmap) -> Unit) {
                     modifier = Modifier.padding(horizontal = 20.dp),
                 )
                 Spacer(Modifier.height(10.dp))
-                PrimaryTabRow(selectedTabIndex = tab) {
+                PrimaryTabRow(selectedTabIndex = tab, containerColor = Color.Transparent, contentColor = AppColors.Primary) {
                     listOf("Draw", "Type", "Upload").forEachIndexed { i, label ->
                         Tab(selected = tab == i, onClick = { tab = i }, text = { Text(label) })
                     }
@@ -266,7 +266,7 @@ fun SignatureCreatorDialog(onDismiss: () -> Unit, onSave: (Bitmap) -> Unit) {
                                         .background(Color.White)
                                         .border(
                                             if (selected) 2.dp else 1.dp,
-                                            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                            if (selected) AppColors.Teal else AppColors.Border,
                                             RoundedCornerShape(14.dp),
                                         )
                                         .clickable { font = option }
@@ -320,7 +320,7 @@ fun SignatureCreatorDialog(onDismiss: () -> Unit, onSave: (Bitmap) -> Unit) {
                                     onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                                     modifier = Modifier.weight(1f),
                                 ) {
-                                    Icon(Icons.Outlined.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Icon(AppIcons.Image, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(6.dp))
                                     Text("Gallery")
                                 }
@@ -328,7 +328,7 @@ fun SignatureCreatorDialog(onDismiss: () -> Unit, onSave: (Bitmap) -> Unit) {
                                     onClick = { pickFile.launch(arrayOf("image/*")) },
                                     modifier = Modifier.weight(1f),
                                 ) {
-                                    Icon(Icons.Outlined.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Icon(AppIcons.Folder, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(6.dp))
                                     Text("Files")
                                 }
@@ -488,7 +488,7 @@ private fun StyleToggle(checked: Boolean, onChange: (Boolean) -> Unit, icon: and
         modifier = Modifier
             .size(48.dp)
             .clip(RoundedCornerShape(12.dp))
-            .background(if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHigh),
+            .background(if (checked) AppColors.BlueSubtle else AppColors.Background),
     ) {
         Icon(icon, contentDescription = label)
     }

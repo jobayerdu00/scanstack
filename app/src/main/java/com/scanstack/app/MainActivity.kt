@@ -3,7 +3,9 @@ package com.scanstack.app
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.graphics.Color
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
@@ -22,7 +24,11 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         PDFBoxResourceLoader.init(applicationContext)
         AppFonts.init(applicationContext)
-        enableEdgeToEdge()
+        // Light brand theme everywhere: dark status/navigation bar icons on transparent bars
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.light(Color.WHITE, Color.WHITE),
+        )
         if (savedInstanceState == null) readIntent(intent)
 
         val repo = DocRepository(applicationContext)

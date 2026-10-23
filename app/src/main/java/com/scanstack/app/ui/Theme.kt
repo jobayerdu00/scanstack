@@ -1,96 +1,146 @@
 package com.scanstack.app.ui
 
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.scanstack.app.R
 
-/** Brand and tool colors used across the app. */
-object Brand {
-    val Navy = Color(0xFF0B2545)
-    val Deep = Color(0xFF0B4F6C)
-    val Teal = Color(0xFF0E8A85)
-    val Mint = Color(0xFF34C3A9)
-    val Amber = Color(0xFFF5A524)
-    val Orange = Color(0xFFF2703A)
-    val Blue = Color(0xFF2F6FED)
-    val Indigo = Color(0xFF4F46E5)
-    val Violet = Color(0xFF8B5CF6)
-    val Pink = Color(0xFFE5487D)
-    val Red = Color(0xFFE5484D)
-    val Green = Color(0xFF1FA463)
-    val Cyan = Color(0xFF0EA5C6)
-    val Slate = Color(0xFF475569)
-    val Brown = Color(0xFFA0643B)
+// ============================================================================
+// Design tokens. Change colors, type and spacing here, not in screens.
+// ============================================================================
 
-    val header = Brush.linearGradient(listOf(Navy, Deep, Teal))
-    val scanCard = Brush.linearGradient(listOf(Color(0xFFF7B733), Color(0xFFF2703A)))
-    val importCard = Brush.linearGradient(listOf(Color(0xFF4F7BF7), Color(0xFF6D4AE0)))
+/** Brand palette (deep blue + teal on a soft, light background). */
+object AppColors {
+    val Primary = Color(0xFF2457D6)        // primary buttons, key actions, active navigation
+    val PrimaryDark = Color(0xFF1B43A8)    // text on subtle blue backgrounds
+    val Teal = Color(0xFF12B8A6)           // selected highlights, accents, progress
+    val TealDark = Color(0xFF0B7F72)       // text/icons on subtle teal backgrounds
+    val Background = Color(0xFFF7F9FC)     // screen background
+    val Card = Color(0xFFFFFFFF)           // cards, sheets, bars
+    val Text = Color(0xFF172033)           // headings, important text, standard icons
+    val TextSecondary = Color(0xFF64748B)  // supporting text
+    val TextMuted = Color(0xFF94A3B8)      // placeholders, disabled hints
+    val Border = Color(0xFFE2E8F0)         // card borders, dividers
+    val Canvas = Color(0xFFEDF1F7)         // backdrop behind document pages
+    val BlueSubtle = Color(0xFFEEF4FF)     // subtle blue fill (icon tiles, selected rows)
+    val TealSubtle = Color(0xFFE8FAF7)     // subtle teal fill
+    val Success = Color(0xFF16A34A)
+    val Warning = Color(0xFFF59E0B)
+    val Error = Color(0xFFDC2626)
+    val ErrorSubtle = Color(0xFFFEF2F2)
 }
 
-private val LightColors = lightColorScheme(
-    primary = Color(0xFF00696B),
-    onPrimary = Color(0xFFFFFFFF),
-    primaryContainer = Color(0xFF9CF1F0),
-    onPrimaryContainer = Color(0xFF002020),
-    secondary = Color(0xFF4A6363),
-    onSecondary = Color(0xFFFFFFFF),
-    secondaryContainer = Color(0xFFCCE8E7),
-    onSecondaryContainer = Color(0xFF051F1F),
-    tertiary = Color(0xFF7A5900),
-    tertiaryContainer = Color(0xFFFFDEA0),
-    onTertiaryContainer = Color(0xFF261900),
-    background = Color(0xFFF6FAF9),
-    onBackground = Color(0xFF171D1D),
-    surface = Color(0xFFF6FAF9),
-    onSurface = Color(0xFF171D1D),
-    surfaceVariant = Color(0xFFDAE5E4),
-    onSurfaceVariant = Color(0xFF3F4948),
-    surfaceContainerLowest = Color(0xFFFFFFFF),
-    surfaceContainerLow = Color(0xFFF0F4F3),
-    surfaceContainer = Color(0xFFEAEFEE),
-    surfaceContainerHigh = Color(0xFFE4E9E8),
-    surfaceContainerHighest = Color(0xFFDFE3E2),
-    outline = Color(0xFF6F7979),
-    outlineVariant = Color(0xFFBEC9C8),
-    error = Color(0xFFBA1A1A),
+/** Spacing scale on a 4 dp grid. */
+object Space {
+    val xs = 4.dp
+    val s = 8.dp
+    val m = 12.dp
+    val l = 16.dp
+    val xl = 24.dp
+    val xxl = 32.dp
+}
+
+/** Corner radii. Kept modest so the UI doesn't look bubbly. */
+object Radius {
+    val s = 8.dp
+    val m = 12.dp
+    val l = 16.dp
+}
+
+val Inter = FontFamily(
+    Font(R.font.inter_regular, FontWeight.Normal),
+    Font(R.font.inter_medium, FontWeight.Medium),
+    Font(R.font.inter_semibold, FontWeight.SemiBold),
+    Font(R.font.inter_bold, FontWeight.Bold),
 )
 
-private val DarkColors = darkColorScheme(
-    primary = Color(0xFF80D5D4),
-    onPrimary = Color(0xFF003737),
-    primaryContainer = Color(0xFF004F50),
-    onPrimaryContainer = Color(0xFF9CF1F0),
-    secondary = Color(0xFFB0CCCB),
-    onSecondary = Color(0xFF1B3534),
-    secondaryContainer = Color(0xFF324B4B),
-    onSecondaryContainer = Color(0xFFCCE8E7),
-    tertiary = Color(0xFFF2C863),
-    tertiaryContainer = Color(0xFF5C4200),
-    onTertiaryContainer = Color(0xFFFFDEA0),
-    background = Color(0xFF0E1515),
-    onBackground = Color(0xFFDDE4E3),
-    surface = Color(0xFF0E1515),
-    onSurface = Color(0xFFDDE4E3),
-    surfaceVariant = Color(0xFF3F4948),
-    onSurfaceVariant = Color(0xFFBEC9C8),
-    surfaceContainerLowest = Color(0xFF090F0F),
-    surfaceContainerLow = Color(0xFF171D1D),
-    surfaceContainer = Color(0xFF1B2121),
-    surfaceContainerHigh = Color(0xFF252B2B),
-    surfaceContainerHighest = Color(0xFF303636),
-    outline = Color(0xFF889392),
-    outlineVariant = Color(0xFF3F4948),
-    error = Color(0xFFFFB4AB),
+private val AppColorScheme = lightColorScheme(
+    primary = AppColors.Primary,
+    onPrimary = Color.White,
+    primaryContainer = AppColors.BlueSubtle,
+    onPrimaryContainer = AppColors.PrimaryDark,
+    inversePrimary = Color(0xFFB4C8FF),
+    secondary = AppColors.Teal,
+    onSecondary = Color.White,
+    secondaryContainer = AppColors.TealSubtle,
+    onSecondaryContainer = AppColors.TealDark,
+    tertiary = AppColors.Teal,
+    onTertiary = Color.White,
+    tertiaryContainer = AppColors.TealSubtle,
+    onTertiaryContainer = AppColors.TealDark,
+    background = AppColors.Background,
+    onBackground = AppColors.Text,
+    surface = AppColors.Background,
+    onSurface = AppColors.Text,
+    surfaceVariant = Color(0xFFF1F5F9),
+    onSurfaceVariant = AppColors.TextSecondary,
+    surfaceTint = Color.Transparent,
+    surfaceContainerLowest = AppColors.Card,
+    surfaceContainerLow = AppColors.Card,
+    surfaceContainer = AppColors.Card,
+    surfaceContainerHigh = AppColors.Card,
+    surfaceContainerHighest = AppColors.Card,
+    surfaceBright = AppColors.Card,
+    surfaceDim = Color(0xFFE5EAF1),
+    inverseSurface = AppColors.Text,
+    inverseOnSurface = Color.White,
+    outline = Color(0xFFCBD5E1),
+    outlineVariant = AppColors.Border,
+    error = AppColors.Error,
+    onError = Color.White,
+    errorContainer = AppColors.ErrorSubtle,
+    onErrorContainer = Color(0xFF991B1B),
+    scrim = Color(0xFF0F172A),
 )
 
+private fun style(size: Int, line: Int, weight: FontWeight, spacing: Float = 0f) = TextStyle(
+    fontFamily = Inter,
+    fontSize = size.sp,
+    lineHeight = line.sp,
+    fontWeight = weight,
+    letterSpacing = spacing.sp,
+)
+
+private val AppTypography = Typography(
+    displaySmall = style(32, 40, FontWeight.Bold, -0.5f),
+    headlineMedium = style(26, 34, FontWeight.Bold, -0.4f),
+    headlineSmall = style(22, 30, FontWeight.Bold, -0.3f),
+    titleLarge = style(20, 28, FontWeight.SemiBold, -0.2f),
+    titleMedium = style(16, 24, FontWeight.SemiBold),
+    titleSmall = style(14, 20, FontWeight.SemiBold),
+    bodyLarge = style(16, 24, FontWeight.Normal),
+    bodyMedium = style(14, 20, FontWeight.Normal),
+    bodySmall = style(12, 18, FontWeight.Normal),
+    labelLarge = style(14, 20, FontWeight.SemiBold),
+    labelMedium = style(12, 16, FontWeight.Medium),
+    labelSmall = style(11, 16, FontWeight.Medium, 0.1f),
+)
+
+private val AppShapes = Shapes(
+    extraSmall = RoundedCornerShape(6.dp),
+    small = RoundedCornerShape(Radius.s),
+    medium = RoundedCornerShape(Radius.m),
+    large = RoundedCornerShape(Radius.l),
+    extraLarge = RoundedCornerShape(20.dp),
+)
+
+/** The app always uses its light brand theme. */
 @Composable
 fun ScanStackTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) DarkColors else LightColors,
+        colorScheme = AppColorScheme,
+        typography = AppTypography,
+        shapes = AppShapes,
         content = content,
     )
 }

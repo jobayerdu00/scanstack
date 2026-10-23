@@ -2,6 +2,7 @@
 
 package com.scanstack.app.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -116,9 +117,10 @@ fun FormScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = appBarColors(),
                 title = { Text("Fill form") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(AppIcons.Back, contentDescription = "Back") }
                 },
                 actions = {
                     if (fields.isNotEmpty()) {
@@ -157,7 +159,8 @@ fun FormScreen(
                 }
                 item {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                        colors = CardDefaults.cardColors(containerColor = AppColors.TealSubtle),
+                        shape = RoundedCornerShape(Radius.l),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Row(
@@ -189,7 +192,9 @@ fun FormScreen(
 @Composable
 private fun FieldCard(field: FormField, value: String, onChange: (String) -> Unit) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        colors = CardDefaults.cardColors(containerColor = AppColors.Card),
+        border = BorderStroke(1.dp, AppColors.Border),
+        shape = RoundedCornerShape(Radius.l),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
@@ -256,7 +261,7 @@ private fun FieldCard(field: FormField, value: String, onChange: (String) -> Uni
                             shape = RoundedCornerShape(10.dp),
                         ) {
                             Text(shown.ifEmpty { "Choose…" }, modifier = Modifier.weight(1f), textAlign = TextAlign.Start)
-                            Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
+                            Icon(AppIcons.ChevronDown, contentDescription = null)
                         }
                         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
                             field.options.forEachIndexed { i, option ->
@@ -301,7 +306,7 @@ private fun NoFields(modifier: Modifier, xfa: Boolean, onUseFillAndSign: () -> U
         )
         Spacer(Modifier.height(18.dp))
         Button(onClick = onUseFillAndSign) {
-            Icon(Icons.Outlined.EditNote, contentDescription = null, modifier = Modifier.size(18.dp))
+            Icon(AppIcons.Form, contentDescription = null, modifier = Modifier.size(18.dp))
             HSpace(8)
             Text("Open Fill & Sign")
         }

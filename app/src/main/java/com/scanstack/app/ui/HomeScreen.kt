@@ -8,10 +8,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,43 +32,28 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.CameraAlt
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.DocumentScanner
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.FileOpen
-import androidx.compose.material.icons.outlined.Folder
-import androidx.compose.material.icons.outlined.GridView
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material.icons.outlined.Storage
-import androidx.compose.material.icons.outlined.AutoStories
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -79,19 +64,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowCompat
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
+import com.scanstack.app.R
 import com.scanstack.app.data.Doc
 import com.scanstack.app.data.DocRepository
 import com.scanstack.app.pdf.PdfTools
@@ -133,8 +118,6 @@ fun HomeScreen(
     var deleteTarget by remember { mutableStateOf<Doc?>(null) }
     var pickFor by remember { mutableStateOf<Tool?>(null) }
     var importFor by remember { mutableStateOf<Tool?>(null) }
-
-    LightStatusBarIcons(false)
 
     LaunchedEffect(version) {
         docs = withContext(Dispatchers.IO) { repo.list() }
@@ -244,22 +227,29 @@ fun HomeScreen(
     }
 
     Scaffold(
+        containerColor = AppColors.Background,
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 6.dp) {
-                NavItem("Home", Icons.Filled.Home, Icons.Outlined.Home, tab == Tab.Home) { tab = Tab.Home }
-                NavItem("Files", Icons.Filled.Folder, Icons.Outlined.Folder, tab == Tab.Files) { tab = Tab.Files }
-                NavItem("Tools", Icons.Filled.GridView, Icons.Outlined.GridView, tab == Tab.Tools) { tab = Tab.Tools }
+            Column {
+                Hairline()
+                NavigationBar(containerColor = AppColors.Card, tonalElevation = 0.dp) {
+                    NavItem("Home", AppIcons.Home, tab == Tab.Home) { tab = Tab.Home }
+                    NavItem("Documents", AppIcons.Folder, tab == Tab.Files) { tab = Tab.Files }
+                    NavItem("Tools", AppIcons.Grid, tab == Tab.Tools) { tab = Tab.Tools }
+                }
             }
         },
         floatingActionButton = {
-            if (tab != Tab.Tools) {
-                FloatingActionButton(
+            if (tab == Tab.Files) {
+                ExtendedFloatingActionButton(
                     onClick = { startScan() },
-                    containerColor = Brand.Orange,
+                    containerColor = AppColors.Primary,
                     contentColor = Color.White,
-                    shape = CircleShape,
-                ) { Icon(Icons.Outlined.CameraAlt, contentDescription = "Scan") }
+                    shape = RoundedCornerShape(Radius.l),
+                    elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 3.dp),
+                    icon = { Icon(AppIcons.Scan, contentDescription = null) },
+                    text = { Text("Scan", style = MaterialTheme.typography.labelLarge) },
+                )
             }
         },
         snackbarHost = { SnackbarHost(snackbar) },
@@ -272,6 +262,7 @@ fun HomeScreen(
                 bottomPadding = bottom,
                 onScan = { startScan() },
                 onImport = { runTool(Tool.Import) },
+                onPhotos = { runTool(Tool.Photos) },
                 onTool = { runTool(it) },
                 onOpen = { onOpen(it.file) },
                 onSeeAllTools = { tab = Tab.Tools },
@@ -345,9 +336,10 @@ fun HomeScreen(
 private fun DashboardTab(
     docs: List<Doc>,
     loaded: Boolean,
-    bottomPadding: androidx.compose.ui.unit.Dp,
+    bottomPadding: Dp,
     onScan: () -> Unit,
     onImport: () -> Unit,
+    onPhotos: () -> Unit,
     onTool: (Tool) -> Unit,
     onOpen: (Doc) -> Unit,
     onSeeAllTools: () -> Unit,
@@ -355,71 +347,77 @@ private fun DashboardTab(
 ) {
     val pages = docs.sumOf { it.pages.coerceAtLeast(0) }
     val storage = docs.sumOf { it.sizeBytes }
-    val featured = listOf(Tool.Sign, Tool.Form, Tool.Word, Tool.Watermark, Tool.Photos, Tool.Merge, Tool.Compress, Tool.Text)
+    val featured = listOf(Tool.Sign, Tool.Form, Tool.Word, Tool.Watermark, Tool.Merge, Tool.Compress, Tool.Text, Tool.Protect)
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(bottom = bottomPadding + 88.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = bottomPadding + Space.xl),
     ) {
+        // Header
         item {
-            HeaderBox(tall = true) {
+            Column(
+                Modifier
+                    .statusBarsPadding()
+                    .padding(start = Space.l, end = Space.s, top = Space.s),
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    AppMark()
+                    Image(painterResource(R.drawable.logo_mark), contentDescription = null, modifier = Modifier.size(34.dp))
                     HSpace(10)
-                    Text(
-                        "ScanStack",
-                        color = Color.White,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
+                    Text("ScanStack", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = AppColors.Text)
                     Spacer(Modifier.weight(1f))
                     IconButton(onClick = onSeeAllFiles) {
-                        Icon(Icons.Outlined.Search, contentDescription = "Search files", tint = Color.White)
+                        Icon(AppIcons.Search, contentDescription = "Search documents", tint = AppColors.Text)
                     }
                 }
-                Spacer(Modifier.height(18.dp))
-                Text(greeting(), color = Color.White.copy(alpha = 0.78f), style = MaterialTheme.typography.bodyLarge)
+                Spacer(Modifier.height(Space.l))
+                Text(greeting(), style = MaterialTheme.typography.bodyMedium, color = AppColors.TextSecondary)
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    "All your documents in one place",
-                    color = Color.White,
+                    "What would you like to do?",
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.SemiBold,
+                    color = AppColors.Text,
+                    modifier = Modifier.padding(end = Space.s),
                 )
-                Spacer(Modifier.height(20.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    StatPill("Documents", "${docs.size}", Icons.Outlined.Description, Modifier.weight(1f))
-                    StatPill("Pages", "$pages", Icons.Outlined.AutoStories, Modifier.weight(1f))
-                    StatPill("Storage", formatSize(storage), Icons.Outlined.Storage, Modifier.weight(1f))
-                }
             }
         }
 
+        // Primary action
+        item {
+            ScanCard(Modifier.padding(start = Space.l, end = Space.l, top = 20.dp), onScan)
+        }
+
+        // Secondary actions
         item {
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, top = 18.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    .padding(horizontal = Space.l, vertical = Space.m),
+                horizontalArrangement = Arrangement.spacedBy(Space.m),
             ) {
-                HeroCard("Scan", "Camera · auto-crop", Icons.Outlined.DocumentScanner, Brand.scanCard, Modifier.weight(1f), onScan)
-                HeroCard("Import PDF", "From your phone", Icons.Outlined.FileOpen, Brand.importCard, Modifier.weight(1f), onImport)
+                QuickAction("Import PDF", "From your phone", AppIcons.Import, Modifier.weight(1f), onImport)
+                QuickAction("Photos to PDF", "From your gallery", AppIcons.Image, Modifier.weight(1f), onPhotos)
             }
         }
 
+        // Stats
+        item {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Space.l),
+                horizontalArrangement = Arrangement.spacedBy(Space.s),
+            ) {
+                Stat("Documents", "${docs.size}", Modifier.weight(1f))
+                Stat("Pages", "$pages", Modifier.weight(1f))
+                Stat("Storage", formatSize(storage), Modifier.weight(1f))
+            }
+        }
+
+        // Tools
         item { SectionTitle("Tools", "See all", onSeeAllTools) }
         item {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(22.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            ) {
-                Column(Modifier.padding(vertical = 10.dp, horizontal = 6.dp)) {
+            WhiteCard(Modifier.padding(horizontal = Space.l)) {
+                Column(Modifier.padding(vertical = Space.s, horizontal = Space.xs)) {
                     featured.chunked(4).forEach { row ->
                         Row(Modifier.fillMaxWidth()) {
                             row.forEach { tool -> ToolButton(tool, Modifier.weight(1f)) { onTool(tool) } }
@@ -429,14 +427,15 @@ private fun DashboardTab(
             }
         }
 
-        item { SectionTitle("Recent", if (docs.isNotEmpty()) "See all" else null, onSeeAllFiles) }
+        // Recent
+        item { SectionTitle("Recent documents", if (docs.isNotEmpty()) "See all" else null, onSeeAllFiles) }
         item {
             if (loaded && docs.isEmpty()) {
-                EmptyDocs(Modifier.padding(horizontal = 16.dp), onScan)
+                EmptyDocs(Modifier.padding(horizontal = Space.l), onScan)
             } else {
                 LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(horizontal = Space.l),
+                    horizontalArrangement = Arrangement.spacedBy(Space.m),
                 ) {
                     items(docs.take(12), key = { it.file.absolutePath }) { doc -> RecentCard(doc) { onOpen(doc) } }
                 }
@@ -445,85 +444,106 @@ private fun DashboardTab(
     }
 }
 
+/** The main call to action: solid brand blue, white text, teal scan symbol. */
+@Composable
+private fun ScanCard(modifier: Modifier, onClick: () -> Unit) {
+    Box(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(Radius.l))
+            .background(AppColors.Primary)
+            .clickable(onClick = onClick)
+            .padding(20.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("Scan a document", style = MaterialTheme.typography.titleLarge, color = Color.White)
+                Spacer(Modifier.height(Space.xs))
+                Text(
+                    "Your camera finds the edges, crops and cleans up each page.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.82f),
+                )
+                Spacer(Modifier.height(Space.l))
+                Row(
+                    Modifier
+                        .clip(RoundedCornerShape(Radius.s))
+                        .background(Color.White)
+                        .padding(horizontal = 14.dp, vertical = Space.s),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(AppIcons.Camera, contentDescription = null, tint = AppColors.Primary, modifier = Modifier.size(18.dp))
+                    HSpace(8)
+                    Text("Start scanning", style = MaterialTheme.typography.labelLarge, color = AppColors.Primary)
+                }
+            }
+            HSpace(16)
+            Box(
+                Modifier
+                    .size(72.dp)
+                    .clip(RoundedCornerShape(Radius.l))
+                    .background(Color.White),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(AppIcons.Scan, contentDescription = null, tint = AppColors.Teal, modifier = Modifier.size(40.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun QuickAction(title: String, subtitle: String, icon: ImageVector, modifier: Modifier, onClick: () -> Unit) {
+    WhiteCard(modifier, onClick = onClick) {
+        Row(Modifier.padding(Space.m), verticalAlignment = Alignment.CenterVertically) {
+            ToolIcon(icon, size = 40.dp)
+            HSpace(10)
+            Column {
+                Text(title, style = MaterialTheme.typography.titleSmall, color = AppColors.Text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = AppColors.TextSecondary, maxLines = 1)
+            }
+        }
+    }
+}
+
+@Composable
+private fun Stat(label: String, value: String, modifier: Modifier) {
+    WhiteCard(modifier) {
+        Column(Modifier.padding(horizontal = Space.m, vertical = Space.m)) {
+            Text(value, style = MaterialTheme.typography.titleMedium, color = AppColors.Text, maxLines = 1)
+            Text(label, style = MaterialTheme.typography.labelMedium, color = AppColors.TextSecondary)
+        }
+    }
+}
+
 @Composable
 private fun RecentCard(doc: Doc, onClick: () -> Unit) {
-    Column(
-        Modifier
-            .width(124.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick),
-    ) {
-        Card(
-            shape = RoundedCornerShape(14.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-        ) {
+    WhiteCard(Modifier.width(132.dp), onClick = onClick) {
+        Column(Modifier.padding(Space.s)) {
             Thumbnail(
                 doc,
                 Modifier
                     .fillMaxWidth()
-                    .aspectRatio(0.76f),
+                    .aspectRatio(0.78f)
+                    .clip(RoundedCornerShape(Radius.s))
+                    .border(1.dp, AppColors.Border, RoundedCornerShape(Radius.s)),
                 widthPx = 320,
             )
+            Spacer(Modifier.height(Space.s))
+            Text(
+                doc.name,
+                style = MaterialTheme.typography.labelLarge,
+                color = AppColors.Text,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 2.dp),
+            )
+            Text(
+                if (doc.pages < 0) "Locked" else "${doc.pages} ${if (doc.pages == 1) "page" else "pages"} · ${formatSize(doc.sizeBytes)}",
+                style = MaterialTheme.typography.labelSmall,
+                color = AppColors.TextSecondary,
+                modifier = Modifier.padding(horizontal = 2.dp, vertical = 2.dp),
+            )
         }
-        Spacer(Modifier.height(8.dp))
-        Text(doc.name, style = MaterialTheme.typography.labelLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        Text(
-            if (doc.pages < 0) "Locked" else "${doc.pages} ${if (doc.pages == 1) "page" else "pages"} · ${formatSize(doc.sizeBytes)}",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun HeroCard(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    brush: Brush,
-    modifier: Modifier,
-    onClick: () -> Unit,
-) {
-    Box(
-        modifier
-            .height(118.dp)
-            .clip(RoundedCornerShape(22.dp))
-            .background(brush)
-            .clickable(onClick = onClick),
-    ) {
-        Canvas(Modifier.fillMaxSize()) {
-            drawCircle(Color.White.copy(alpha = 0.12f), radius = size.height * 0.7f, center = Offset(size.width * 1.02f, size.height * 0.05f))
-        }
-        Column(Modifier.padding(16.dp)) {
-            Box(
-                Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White.copy(alpha = 0.22f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, contentDescription = null, tint = Color.White)
-            }
-            Spacer(Modifier.weight(1f))
-            Text(title, color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Text(subtitle, color = Color.White.copy(alpha = 0.85f), style = MaterialTheme.typography.labelMedium)
-        }
-    }
-}
-
-@Composable
-private fun StatPill(label: String, value: String, icon: ImageVector, modifier: Modifier) {
-    Column(
-        modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White.copy(alpha = 0.13f))
-            .padding(horizontal = 12.dp, vertical = 12.dp),
-    ) {
-        Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = 0.85f), modifier = Modifier.size(18.dp))
-        Spacer(Modifier.height(8.dp))
-        Text(value, color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, maxLines = 1)
-        Text(label, color = Color.White.copy(alpha = 0.75f), style = MaterialTheme.typography.labelSmall)
     }
 }
 
@@ -532,19 +552,19 @@ private fun SectionTitle(title: String, action: String?, onAction: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(start = 20.dp, end = 8.dp, top = 22.dp, bottom = 8.dp),
+            .padding(start = 20.dp, end = Space.s, top = Space.xl, bottom = Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+        Text(title, style = MaterialTheme.typography.titleMedium, color = AppColors.Text, modifier = Modifier.weight(1f))
         if (action != null) {
             Text(
                 action,
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = AppColors.Primary,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
+                    .clip(RoundedCornerShape(Radius.s))
                     .clickable(onClick = onAction)
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(horizontal = Space.m, vertical = 6.dp),
             )
         }
     }
@@ -552,40 +572,40 @@ private fun SectionTitle(title: String, action: String?, onAction: () -> Unit) {
 
 @Composable
 private fun EmptyDocs(modifier: Modifier, onScan: () -> Unit) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-    ) {
+    WhiteCard(modifier.fillMaxWidth()) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(28.dp),
+                .padding(Space.xl),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            ToolIcon(Tool.Scan, 60.dp)
-            Spacer(Modifier.height(12.dp))
-            Text("No documents yet", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(4.dp))
+            ToolIcon(AppIcons.Document, AppColors.TealDark, 56.dp, AppColors.TealSubtle)
+            Spacer(Modifier.height(Space.m))
+            Text("No documents yet", style = MaterialTheme.typography.titleMedium, color = AppColors.Text)
+            Spacer(Modifier.height(Space.xs))
             Text(
                 "Scan a page with your camera or import a PDF to get started.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                color = AppColors.TextSecondary,
+                textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(14.dp))
-            androidx.compose.material3.Button(onClick = onScan) { Text("Scan a document") }
+            Spacer(Modifier.height(Space.l))
+            Button(onClick = onScan, shape = RoundedCornerShape(Radius.m)) {
+                Icon(AppIcons.Scan, contentDescription = null, modifier = Modifier.size(18.dp))
+                HSpace(8)
+                Text("Scan a document")
+            }
         }
     }
 }
 
-// ---------------------------------------------------------------- Files tab
+// ---------------------------------------------------------------- Documents tab
 
 @Composable
 private fun FilesTab(
     docs: List<Doc>,
     loaded: Boolean,
-    bottomPadding: androidx.compose.ui.unit.Dp,
+    bottomPadding: Dp,
     onOpen: (Doc) -> Unit,
     onShare: (Doc) -> Unit,
     onRename: (Doc) -> Unit,
@@ -604,74 +624,91 @@ private fun FilesTab(
         }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(bottom = bottomPadding + 88.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = bottomPadding + 96.dp),
+        verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         item {
-            HeaderBox(tall = false) {
-                Text("My files", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(4.dp))
+            Column(
+                Modifier
+                    .statusBarsPadding()
+                    .padding(start = Space.l, end = Space.l, top = 20.dp),
+            ) {
+                Text("Documents", style = MaterialTheme.typography.headlineSmall, color = AppColors.Text)
+                Spacer(Modifier.height(2.dp))
                 Text(
                     "${docs.size} ${if (docs.size == 1) "document" else "documents"} · ${formatSize(docs.sumOf { it.sizeBytes })}",
-                    color = Color.White.copy(alpha = 0.78f),
                     style = MaterialTheme.typography.bodyMedium,
+                    color = AppColors.TextSecondary,
                 )
-                Spacer(Modifier.height(14.dp))
-                TextField(
+                Spacer(Modifier.height(Space.l))
+                OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
-                    placeholder = { Text("Search documents") },
-                    leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                    placeholder = { Text("Search documents", color = AppColors.TextMuted) },
+                    leadingIcon = { Icon(AppIcons.Search, contentDescription = null, tint = AppColors.TextSecondary) },
                     singleLine = true,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        focusedTextColor = Color(0xFF111827),
-                        unfocusedTextColor = Color(0xFF111827),
-                        focusedPlaceholderColor = Color(0xFF6B7280),
-                        unfocusedPlaceholderColor = Color(0xFF6B7280),
-                        focusedLeadingIconColor = Color(0xFF6B7280),
-                        unfocusedLeadingIconColor = Color(0xFF6B7280),
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        cursorColor = Brand.Teal,
+                    shape = RoundedCornerShape(Radius.m),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = AppColors.Card,
+                        unfocusedContainerColor = AppColors.Card,
+                        focusedBorderColor = AppColors.Primary,
+                        unfocusedBorderColor = AppColors.Border,
+                        focusedTextColor = AppColors.Text,
+                        unfocusedTextColor = AppColors.Text,
+                        cursorColor = AppColors.Primary,
                     ),
                     modifier = Modifier.fillMaxWidth(),
                 )
-            }
-        }
-        item {
-            Row(
-                Modifier.padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                SortBy.entries.forEach { option ->
-                    FilterChip(
-                        selected = sort == option,
-                        onClick = { sort = option },
-                        label = { Text(option.label) },
-                    )
+                Spacer(Modifier.height(Space.m))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+                    Text("Sort", style = MaterialTheme.typography.labelMedium, color = AppColors.TextSecondary)
+                    SortBy.entries.forEach { option ->
+                        FilterChip(
+                            selected = sort == option,
+                            onClick = { sort = option },
+                            label = { Text(option.label) },
+                            shape = RoundedCornerShape(Radius.s),
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = AppColors.Card,
+                                labelColor = AppColors.TextSecondary,
+                                selectedContainerColor = AppColors.TealSubtle,
+                                selectedLabelColor = AppColors.TealDark,
+                            ),
+                        )
+                    }
                 }
             }
         }
         if (loaded && shown.isEmpty()) {
             item {
-                Text(
-                    if (docs.isEmpty()) "No documents yet. Tap the camera button to scan one." else "Nothing matches \"$query\".",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 24.dp),
-                )
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = Space.xl, vertical = 40.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    ToolIcon(AppIcons.Folder, size = 56.dp)
+                    Spacer(Modifier.height(Space.m))
+                    Text(
+                        if (docs.isEmpty()) "No documents yet" else "No matches",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = AppColors.Text,
+                    )
+                    Spacer(Modifier.height(Space.xs))
+                    Text(
+                        if (docs.isEmpty()) "Tap Scan to capture your first document." else "Nothing is called \"$query\".",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = AppColors.TextSecondary,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
         items(shown, key = { it.file.absolutePath }) { doc ->
             DocRow(
                 doc = doc,
-                modifier = Modifier.padding(horizontal = 16.dp),
+                modifier = Modifier.padding(horizontal = Space.l),
                 onClick = { onOpen(doc) },
                 onShare = { onShare(doc) },
                 onRename = { onRename(doc) },
@@ -691,38 +728,40 @@ private fun DocRow(
     onDelete: () -> Unit,
 ) {
     var menu by remember { mutableStateOf(false) }
-    Card(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-    ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+    WhiteCard(modifier.fillMaxWidth(), onClick = onClick) {
+        Row(Modifier.padding(start = Space.m, top = Space.m, bottom = Space.m), verticalAlignment = Alignment.CenterVertically) {
             Thumbnail(
                 doc,
                 Modifier
-                    .size(width = 50.dp, height = 66.dp)
-                    .clip(RoundedCornerShape(8.dp)),
+                    .size(width = 46.dp, height = 60.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .border(1.dp, AppColors.Border, RoundedCornerShape(6.dp)),
             )
             HSpace(14)
             Column(Modifier.weight(1f)) {
-                Text(doc.name, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Spacer(Modifier.height(3.dp))
-                Text(docInfo(doc), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(doc.name, style = MaterialTheme.typography.titleSmall, color = AppColors.Text, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Spacer(Modifier.height(Space.xs))
+                Text(docInfo(doc), style = MaterialTheme.typography.bodySmall, color = AppColors.TextSecondary)
             }
             Box {
-                IconButton(onClick = { menu = true }) { Icon(Icons.Filled.MoreVert, contentDescription = "More options") }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                    MenuItem("Share", Icons.Outlined.Share) {
+                IconButton(onClick = { menu = true }) {
+                    Icon(AppIcons.More, contentDescription = "More options", tint = AppColors.TextSecondary)
+                }
+                DropdownMenu(
+                    expanded = menu,
+                    onDismissRequest = { menu = false },
+                    containerColor = AppColors.Card,
+                    shape = RoundedCornerShape(Radius.m),
+                ) {
+                    MenuItem("Share", AppIcons.Share) {
                         menu = false
                         onShare()
                     }
-                    MenuItem("Rename", Icons.Outlined.Edit) {
+                    MenuItem("Rename", AppIcons.Edit) {
                         menu = false
                         onRename()
                     }
-                    MenuItem("Delete", Icons.Outlined.Delete) {
+                    MenuItem("Delete", AppIcons.Trash, danger = true) {
                         menu = false
                         onDelete()
                     }
@@ -735,21 +774,23 @@ private fun DocRow(
 // ---------------------------------------------------------------- Tools tab
 
 @Composable
-private fun ToolsTab(bottomPadding: androidx.compose.ui.unit.Dp, onTool: (Tool) -> Unit) {
+private fun ToolsTab(bottomPadding: Dp, onTool: (Tool) -> Unit) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(bottom = bottomPadding + 24.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = bottomPadding + Space.xl),
     ) {
         item {
-            HeaderBox(tall = false) {
-                Text("All tools", color = Color.White, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-                Spacer(Modifier.height(4.dp))
+            Column(
+                Modifier
+                    .statusBarsPadding()
+                    .padding(start = Space.l, end = Space.l, top = 20.dp),
+            ) {
+                Text("Tools", style = MaterialTheme.typography.headlineSmall, color = AppColors.Text)
+                Spacer(Modifier.height(2.dp))
                 Text(
                     "Everything runs on your phone. Nothing is uploaded.",
-                    color = Color.White.copy(alpha = 0.78f),
                     style = MaterialTheme.typography.bodyMedium,
+                    color = AppColors.TextSecondary,
                 )
             }
         }
@@ -757,40 +798,31 @@ private fun ToolsTab(bottomPadding: androidx.compose.ui.unit.Dp, onTool: (Tool) 
             item {
                 Text(
                     group.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 20.dp, top = 22.dp, bottom = 8.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = AppColors.TextSecondary,
+                    modifier = Modifier.padding(start = 20.dp, top = Space.xl, bottom = Space.s),
                 )
             }
             item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                ) {
-                    Tool.entries.filter { it.group == group }.forEach { tool ->
+                WhiteCard(Modifier.padding(horizontal = Space.l)) {
+                    val tools = Tool.entries.filter { it.group == group }
+                    tools.forEachIndexed { i, tool ->
                         Row(
                             Modifier
                                 .fillMaxWidth()
                                 .clickable { onTool(tool) }
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                                .padding(horizontal = Space.m, vertical = Space.m),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            ToolIcon(tool, 46.dp)
+                            ToolIcon(tool, 42.dp)
                             HSpace(14)
                             Column(Modifier.weight(1f)) {
-                                Text(tool.label, style = MaterialTheme.typography.titleSmall)
-                                Text(
-                                    tool.description,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                                Text(tool.label, style = MaterialTheme.typography.titleSmall, color = AppColors.Text)
+                                Text(tool.description, style = MaterialTheme.typography.bodySmall, color = AppColors.TextSecondary)
                             }
+                            Icon(AppIcons.ChevronRight, contentDescription = null, tint = AppColors.TextMuted, modifier = Modifier.size(20.dp))
                         }
+                        if (i < tools.lastIndex) Hairline(Modifier.padding(start = 68.dp))
                     }
                 }
             }
@@ -800,46 +832,26 @@ private fun ToolsTab(bottomPadding: androidx.compose.ui.unit.Dp, onTool: (Tool) 
 
 // ---------------------------------------------------------------- shared pieces
 
+/** White card with a hairline border and no shadow. */
 @Composable
-private fun HeaderBox(tall: Boolean, content: @Composable () -> Unit) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp))
-            .background(Brand.header),
-    ) {
-        Canvas(Modifier.matchParentSize()) {
-            drawCircle(Color.White.copy(alpha = 0.06f), radius = size.width * 0.42f, center = Offset(size.width * 0.98f, 0f))
-            drawCircle(Color.White.copy(alpha = 0.05f), radius = size.width * 0.22f, center = Offset(size.width * 0.08f, size.height))
-        }
-        Column(
-            Modifier
-                .statusBarsPadding()
-                .padding(start = 20.dp, end = 12.dp, top = if (tall) 8.dp else 20.dp, bottom = if (tall) 24.dp else 22.dp)
-                .padding(end = 8.dp),
-        ) {
-            content()
-        }
-    }
-}
-
-@Composable
-private fun AppMark() {
-    Box(
-        Modifier
-            .size(34.dp)
-            .clip(RoundedCornerShape(10.dp))
-            .background(Color.White.copy(alpha = 0.18f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(Icons.Outlined.DocumentScanner, contentDescription = null, tint = Brand.Amber, modifier = Modifier.size(20.dp))
+fun WhiteCard(
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    content: @Composable () -> Unit,
+) {
+    val shape = RoundedCornerShape(Radius.l)
+    val colors = CardDefaults.cardColors(containerColor = AppColors.Card)
+    val border = androidx.compose.foundation.BorderStroke(1.dp, AppColors.Border)
+    if (onClick != null) {
+        Card(onClick = onClick, modifier = modifier, shape = shape, colors = colors, border = border) { content() }
+    } else {
+        Card(modifier = modifier, shape = shape, colors = colors, border = border) { content() }
     }
 }
 
 @Composable
 private fun androidx.compose.foundation.layout.RowScope.NavItem(
     label: String,
-    selectedIcon: ImageVector,
     icon: ImageVector,
     selected: Boolean,
     onClick: () -> Unit,
@@ -847,22 +859,16 @@ private fun androidx.compose.foundation.layout.RowScope.NavItem(
     NavigationBarItem(
         selected = selected,
         onClick = onClick,
-        icon = { Icon(if (selected) selectedIcon else icon, contentDescription = null) },
-        label = { Text(label) },
+        icon = { Icon(icon, contentDescription = null) },
+        label = { Text(label, style = MaterialTheme.typography.labelMedium) },
+        colors = NavigationBarItemDefaults.colors(
+            selectedIconColor = AppColors.Primary,
+            selectedTextColor = AppColors.Primary,
+            indicatorColor = AppColors.BlueSubtle,
+            unselectedIconColor = AppColors.TextSecondary,
+            unselectedTextColor = AppColors.TextSecondary,
+        ),
     )
-}
-
-/** The dashboard's dark header needs white status bar icons; restore on leaving. */
-@Composable
-fun LightStatusBarIcons(dark: Boolean) {
-    val view = LocalView.current
-    val systemDark = isSystemInDarkTheme()
-    DisposableEffect(dark, systemDark) {
-        val window = (view.context as? Activity)?.window
-        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
-        controller?.isAppearanceLightStatusBars = dark
-        onDispose { controller?.isAppearanceLightStatusBars = !systemDark }
-    }
 }
 
 private fun greeting(): String {

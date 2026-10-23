@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -179,9 +180,10 @@ fun WatermarkScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = appBarColors(),
                 title = { Text("Watermark") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(AppIcons.Back, contentDescription = "Back") }
                 },
                 actions = {
                     Button(onClick = { apply() }, enabled = art != null && !busy, modifier = Modifier.padding(end = 8.dp)) {
@@ -203,7 +205,7 @@ fun WatermarkScreen(
                 Modifier
                     .fillMaxWidth()
                     .height(320.dp)
-                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .background(AppColors.Canvas)
                     .padding(16.dp),
                 contentAlignment = Alignment.Center,
             ) {
@@ -281,7 +283,7 @@ fun WatermarkScreen(
                                 style = MaterialTheme.typography.labelSmall,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                    .background(AppColors.BlueSubtle)
                                     .clickable { text = quick }
                                     .padding(horizontal = 8.dp, vertical = 6.dp),
                             )
@@ -297,14 +299,16 @@ fun WatermarkScreen(
                                     .size(28.dp)
                                     .clip(CircleShape)
                                     .background(c)
-                                    .border(if (colorIndex == i) 3.dp else 0.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                                    .border(if (colorIndex == i) 3.dp else 0.dp, AppColors.Teal, CircleShape)
                                     .clickable { colorIndex = i },
                             )
                         }
                     }
                 } else {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                        colors = CardDefaults.cardColors(containerColor = AppColors.Card),
+                        border = BorderStroke(1.dp, AppColors.Border),
+                        shape = RoundedCornerShape(Radius.l),
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Column(Modifier.padding(14.dp)) {
@@ -338,7 +342,7 @@ fun WatermarkScreen(
                                     onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                                     modifier = Modifier.weight(1f),
                                 ) {
-                                    Icon(Icons.Outlined.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Icon(AppIcons.Image, contentDescription = null, modifier = Modifier.size(18.dp))
                                     HSpace(6)
                                     Text("Gallery")
                                 }
@@ -346,7 +350,7 @@ fun WatermarkScreen(
                                     onClick = { pickFile.launch(arrayOf("image/*")) },
                                     modifier = Modifier.weight(1f),
                                 ) {
-                                    Icon(Icons.Outlined.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
+                                    Icon(AppIcons.Folder, contentDescription = null, modifier = Modifier.size(18.dp))
                                     HSpace(6)
                                     Text("Files")
                                 }

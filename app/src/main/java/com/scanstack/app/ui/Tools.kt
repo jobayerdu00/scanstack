@@ -1,6 +1,7 @@
 package com.scanstack.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,19 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.BrandingWatermark
-import androidx.compose.material.icons.outlined.CameraAlt
-import androidx.compose.material.icons.outlined.Compress
-import androidx.compose.material.icons.outlined.ContentCut
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.Draw
-import androidx.compose.material.icons.outlined.EditNote
-import androidx.compose.material.icons.outlined.FileOpen
-import androidx.compose.material.icons.outlined.Layers
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.PhotoLibrary
-import androidx.compose.material.icons.outlined.TextFields
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -50,43 +38,49 @@ enum class ToolGroup(val title: String) {
     Optimize("Optimize & protect"),
 }
 
-/** Every tool in the app. [needsDoc] tools first ask which document to use. */
+/**
+ * Every tool in the app. [needsDoc] tools first ask which document to use.
+ * [accent] tools use the teal highlight; all others use the brand blue.
+ */
 enum class Tool(
     val label: String,
     val description: String,
     val icon: ImageVector,
-    val tint: Color,
     val group: ToolGroup,
     val needsDoc: Boolean,
+    val accent: Boolean = false,
 ) {
-    Scan("Scan", "Use the camera, auto-crop and enhance", Icons.Outlined.CameraAlt, Brand.Teal, ToolGroup.Create, false),
-    Import("Import PDF", "Add PDFs from your phone", Icons.Outlined.FileOpen, Brand.Blue, ToolGroup.Create, false),
-    Photos("Photos to PDF", "Turn pictures into a PDF", Icons.Outlined.PhotoLibrary, Brand.Violet, ToolGroup.Create, false),
-    Word("Word to PDF", "Convert .docx documents to PDF", Icons.Outlined.Description, Brand.Indigo, ToolGroup.Create, false),
-    Sign("Fill & Sign", "Add your signature, text, dates and ticks", Icons.Outlined.Draw, Brand.Pink, ToolGroup.Edit, true),
-    Form("Fill form", "Type into a PDF's form fields", Icons.Outlined.EditNote, Brand.Green, ToolGroup.Edit, true),
-    Watermark("Watermark", "Stamp text or a logo on every page", Icons.Outlined.BrandingWatermark, Brand.Teal, ToolGroup.Edit, true),
-    Merge("Merge", "Combine several PDFs into one", Icons.Outlined.Layers, Brand.Orange, ToolGroup.Edit, false),
-    Extract("Extract pages", "Copy chosen pages into a new PDF", Icons.Outlined.ContentCut, Brand.Brown, ToolGroup.Edit, true),
-    Compress("Compress", "Make files smaller to send", Icons.Outlined.Compress, Brand.Amber, ToolGroup.Optimize, true),
-    Text("Get text", "Copy text from scans and PDFs", Icons.Outlined.TextFields, Brand.Cyan, ToolGroup.Optimize, true),
-    Protect("Password", "Add or remove a password", Icons.Outlined.Lock, Brand.Slate, ToolGroup.Optimize, true),
+    Scan("Scan", "Use the camera, auto-crop and enhance", AppIcons.Scan, ToolGroup.Create, false, accent = true),
+    Import("Import PDF", "Add PDFs from your phone", AppIcons.Import, ToolGroup.Create, false),
+    Photos("Photos to PDF", "Turn pictures into a PDF", AppIcons.Image, ToolGroup.Create, false),
+    Word("Word to PDF", "Convert .docx documents to PDF", AppIcons.Convert, ToolGroup.Create, false),
+    Sign("Fill & Sign", "Add your signature, text, dates and ticks", AppIcons.Signature, ToolGroup.Edit, true),
+    Form("Fill form", "Type into a PDF's form fields", AppIcons.Form, ToolGroup.Edit, true),
+    Watermark("Watermark", "Stamp text or a logo on every page", AppIcons.Watermark, ToolGroup.Edit, true),
+    Merge("Merge", "Combine several PDFs into one", AppIcons.Merge, ToolGroup.Edit, false),
+    Extract("Extract pages", "Copy chosen pages into a new PDF", AppIcons.Scissors, ToolGroup.Edit, true),
+    Compress("Compress", "Make files smaller to send", AppIcons.Compress, ToolGroup.Optimize, true),
+    Text("Get text", "Copy text from scans and PDFs", AppIcons.Ocr, ToolGroup.Optimize, true),
+    Protect("Password", "Add or remove a password", AppIcons.Lock, ToolGroup.Optimize, true);
+
+    val tint: Color get() = if (accent) AppColors.TealDark else AppColors.Primary
+    val tile: Color get() = if (accent) AppColors.TealSubtle else AppColors.BlueSubtle
 }
 
-/** Rounded, softly tinted square with the tool's icon. */
+/** Softly tinted square with an icon. */
 @Composable
-fun ToolIcon(tool: Tool, size: Dp = 52.dp) = ToolIcon(tool.icon, tool.tint, size)
+fun ToolIcon(tool: Tool, size: Dp = 48.dp) = ToolIcon(tool.icon, tool.tint, size, tool.tile)
 
 @Composable
-fun ToolIcon(icon: ImageVector, tint: Color, size: Dp = 52.dp) {
+fun ToolIcon(icon: ImageVector, tint: Color = AppColors.Primary, size: Dp = 48.dp, tile: Color = AppColors.BlueSubtle) {
     Box(
         Modifier
             .size(size)
-            .clip(RoundedCornerShape(size * 0.32f))
-            .background(tint.copy(alpha = 0.14f)),
+            .clip(RoundedCornerShape(size * 0.28f))
+            .background(tile),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(size * 0.48f))
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(size * 0.5f))
     }
 }
 
@@ -95,16 +89,17 @@ fun ToolIcon(icon: ImageVector, tint: Color, size: Dp = 52.dp) {
 fun ToolButton(tool: Tool, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Column(
         modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(Radius.m))
             .clickable(onClick = onClick)
-            .padding(vertical = 8.dp, horizontal = 2.dp),
+            .padding(vertical = Space.s, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         ToolIcon(tool)
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(Space.s))
         Text(
             tool.label,
             style = MaterialTheme.typography.labelMedium,
+            color = AppColors.Text,
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -124,6 +119,7 @@ fun DocPickerDialog(
     val usable = if (tool == Tool.Protect) docs else docs.filter { it.pages > 0 }
     AlertDialog(
         onDismissRequest = onDismiss,
+        containerColor = AppColors.Card,
         icon = { ToolIcon(tool, 44.dp) },
         title = { Text(tool.label) },
         text = {
@@ -131,38 +127,46 @@ fun DocPickerDialog(
                 Text(
                     "Choose a PDF from your phone to get started.",
                     style = MaterialTheme.typography.bodyMedium,
+                    color = AppColors.TextSecondary,
                 )
             } else {
                 Column {
                     Text(
                         "Choose a document",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = AppColors.TextSecondary,
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(Space.s))
                     LazyColumn(Modifier.heightIn(max = 340.dp)) {
                         items(usable, key = { it.file.absolutePath }) { doc ->
                             Row(
                                 Modifier
                                     .fillMaxWidth()
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .clip(RoundedCornerShape(Radius.m))
                                     .clickable { onPick(doc) }
-                                    .padding(vertical = 8.dp, horizontal = 4.dp),
+                                    .padding(vertical = Space.s, horizontal = Space.xs),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Thumbnail(
                                     doc,
                                     Modifier
                                         .size(width = 36.dp, height = 48.dp)
-                                        .clip(RoundedCornerShape(4.dp)),
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .border(1.dp, AppColors.Border, RoundedCornerShape(6.dp)),
                                 )
                                 HSpace(12)
                                 Column(Modifier.weight(1f)) {
-                                    Text(doc.name, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(
+                                        doc.name,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = AppColors.Text,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
                                     Text(
                                         docInfo(doc),
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = AppColors.TextSecondary,
                                         maxLines = 1,
                                     )
                                 }
@@ -173,6 +177,6 @@ fun DocPickerDialog(
             }
         },
         confirmButton = { TextButton(onClick = onImport) { Text("From phone") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel", color = AppColors.TextSecondary) } },
     )
 }

@@ -2,6 +2,7 @@
 
 package com.scanstack.app.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -94,16 +95,17 @@ fun MergeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
+                colors = appBarColors(),
                 title = { Text("Merge PDFs") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.Back, contentDescription = "Back")
                     }
                 },
             )
         },
         bottomBar = {
-            Surface(tonalElevation = 3.dp) {
+            Surface(color = AppColors.Card, modifier = Modifier.topHairline()) {
                 Button(
                     onClick = { merge() },
                     enabled = selected.size >= 2 && !busy,
@@ -146,12 +148,10 @@ fun MergeScreen(
                     onClick = { if (isSelected) selected.remove(doc.file) else selected.add(doc.file) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (isSelected) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surfaceContainerLow
-                        },
+                        containerColor = if (isSelected) AppColors.TealSubtle else AppColors.Card,
                     ),
+                    border = BorderStroke(if (isSelected) 2.dp else 1.dp, if (isSelected) AppColors.Teal else AppColors.Border),
+                    shape = RoundedCornerShape(Radius.l),
                 ) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Thumbnail(
@@ -188,7 +188,7 @@ fun MergeScreen(
 
 @Composable
 private fun OrderBadge(number: Int?) {
-    val primary = MaterialTheme.colorScheme.primary
+    val primary = AppColors.Teal
     if (number == null) {
         Box(
             Modifier

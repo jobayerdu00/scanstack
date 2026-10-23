@@ -265,7 +265,7 @@ fun ViewerScreen(
                     title = { Text("${selectedPages.size} selected") },
                     navigationIcon = {
                         IconButton(onClick = { exitSelection() }) {
-                            Icon(Icons.Filled.Close, contentDescription = "Cancel selection")
+                            Icon(AppIcons.Close, contentDescription = "Cancel selection")
                         }
                     },
                     actions = {
@@ -281,42 +281,44 @@ fun ViewerScreen(
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        containerColor = AppColors.TealSubtle,
+                        titleContentColor = AppColors.TealDark,
+                        navigationIconContentColor = AppColors.TealDark,
+                        actionIconContentColor = AppColors.TealDark,
                     ),
                 )
             } else TopAppBar(
+     colors = appBarColors(),
                 title = { Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(AppIcons.Back, contentDescription = "Back")
                     }
                 },
                 actions = {
                     IconButton(onClick = { shareFile(context, file) }) {
-                        Icon(Icons.Outlined.Share, contentDescription = "Share")
+                        Icon(AppIcons.Share, contentDescription = "Share")
                     }
                     Box {
                         IconButton(onClick = { menu = true }) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = "More options")
+                            Icon(AppIcons.More, contentDescription = "More options")
                         }
                         DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                            MenuItem("Save to phone", Icons.Outlined.Download) {
+                            MenuItem("Save to phone", AppIcons.Download) {
                                 menu = false
                                 saveLauncher.launch(file.name)
                             }
-                            MenuItem("Rename", Icons.Outlined.Edit) {
+                            MenuItem("Rename", AppIcons.Edit) {
                                 menu = false
                                 dialog = ViewerDialog.Rename
                             }
                             if (canEdit) {
-                                MenuItem("Extract pages", Icons.Outlined.ContentCut) {
+                                MenuItem("Extract pages", AppIcons.Scissors) {
                                     menu = false
                                     dialog = ViewerDialog.Extract
                                 }
                             }
-                            MenuItem("Delete", Icons.Outlined.Delete) {
+                            MenuItem("Delete", AppIcons.Trash, danger = true) {
                                 menu = false
                                 dialog = ViewerDialog.Delete
                             }
@@ -327,7 +329,7 @@ fun ViewerScreen(
         },
         bottomBar = {
             if (selecting) {
-                Surface(tonalElevation = 3.dp, shadowElevation = 8.dp) {
+                Surface(color = AppColors.Card, modifier = Modifier.topHairline()) {
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -349,7 +351,7 @@ fun ViewerScreen(
                             enabled = selectedPages.isNotEmpty(),
                             modifier = Modifier.weight(1f),
                         ) {
-                            Icon(Icons.Outlined.ContentCut, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(AppIcons.Scissors, contentDescription = null, modifier = Modifier.size(18.dp))
                             HSpace(6)
                             Text("New PDF")
                         }
@@ -362,14 +364,14 @@ fun ViewerScreen(
                             ),
                             modifier = Modifier.weight(1f),
                         ) {
-                            Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(AppIcons.Trash, contentDescription = null, modifier = Modifier.size(18.dp))
                             HSpace(6)
                             Text(if (selectedPages.isEmpty()) "Delete" else "Delete (${selectedPages.size})")
                         }
                     }
                 }
             } else if (current != null) {
-                Surface(tonalElevation = 3.dp, shadowElevation = 8.dp) {
+                Surface(color = AppColors.Card, modifier = Modifier.topHairline()) {
                     LazyRow(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -378,7 +380,7 @@ fun ViewerScreen(
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         if (canEdit) {
-                            item { BarButton("Add page", Icons.Outlined.NoteAdd, Brand.Orange) { addPage() } }
+                            item { BarButton("Add page", AppIcons.AddPage, AppColors.TealDark, AppColors.TealSubtle) { addPage() } }
                             item { BarAction(Tool.Sign) { onTool(Tool.Sign) } }
                             item { BarAction(Tool.Watermark) { onTool(Tool.Watermark) } }
                             item { BarAction(Tool.Form) { onTool(Tool.Form) } }
@@ -403,7 +405,7 @@ fun ViewerScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(MaterialTheme.colorScheme.surfaceContainer),
+                .background(AppColors.Canvas),
         ) {
             when {
                 current == null -> CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -431,15 +433,15 @@ fun ViewerScreen(
                             val isSelected = selecting && index in selectedPages
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Card(
-                                    elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 6.dp else 2.dp),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                    shape = RoundedCornerShape(Radius.s),
+                                    colors = CardDefaults.cardColors(containerColor = AppColors.Card),
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .then(
-                                            if (isSelected) {
-                                                Modifier.border(3.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
-                                            } else {
-                                                Modifier
-                                            },
+                                        .border(
+                                            if (isSelected) 3.dp else 1.dp,
+                                            if (isSelected) AppColors.Teal else AppColors.Border,
+                                            RoundedCornerShape(Radius.s),
                                         )
                                         .combinedClickable(
                                             onClick = { if (selecting) togglePage(index) },
@@ -464,7 +466,7 @@ fun ViewerScreen(
                                                 Box(
                                                     Modifier
                                                         .matchParentSize()
-                                                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                                                        .background(AppColors.Teal.copy(alpha = 0.10f)),
                                                 )
                                             }
                                             Box(
@@ -474,21 +476,21 @@ fun ViewerScreen(
                                                     .size(30.dp)
                                                     .clip(CircleShape)
                                                     .background(
-                                                        if (isSelected) MaterialTheme.colorScheme.primary
+                                                        if (isSelected) AppColors.Teal
                                                         else androidx.compose.ui.graphics.Color.White.copy(alpha = 0.9f),
                                                     )
                                                     .border(
                                                         2.dp,
-                                                        if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                                        if (isSelected) AppColors.Teal else AppColors.TextMuted,
                                                         CircleShape,
                                                     ),
                                                 contentAlignment = Alignment.Center,
                                             ) {
                                                 if (isSelected) {
                                                     Icon(
-                                                        Icons.Filled.Check,
+                                                        AppIcons.Check,
                                                         contentDescription = "Selected",
-                                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                                        tint = androidx.compose.ui.graphics.Color.White,
                                                         modifier = Modifier.size(18.dp),
                                                     )
                                                 }
@@ -709,7 +711,13 @@ private fun BarAction(tool: Tool, label: String = tool.label, onClick: () -> Uni
     BarButton(label, tool.icon, tool.tint, onClick)
 
 @Composable
-private fun BarButton(label: String, icon: ImageVector, tint: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
+private fun BarButton(
+    label: String,
+    icon: ImageVector,
+    tint: androidx.compose.ui.graphics.Color,
+    tile: androidx.compose.ui.graphics.Color = AppColors.BlueSubtle,
+    onClick: () -> Unit,
+) {
     Column(
         Modifier
             .width(76.dp)
@@ -718,21 +726,16 @@ private fun BarButton(label: String, icon: ImageVector, tint: androidx.compose.u
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        ToolIcon(icon, tint, 40.dp)
-        Spacer(Modifier.height(4.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+        ToolIcon(icon, tint, 40.dp, tile)
+        Spacer(Modifier.height(Space.xs))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = AppColors.Text, maxLines = 1)
     }
 }
 
 @Composable
 private fun LockedState(modifier: Modifier = Modifier, onUnlock: () -> Unit) {
     Column(modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(
-            Icons.Outlined.Lock,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(48.dp),
-        )
+        ToolIcon(AppIcons.Lock, size = 64.dp)
         Spacer(Modifier.height(12.dp))
         Text("This PDF is password protected", style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
         Spacer(Modifier.height(4.dp))
