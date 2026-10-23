@@ -708,7 +708,7 @@ fun ViewerScreen(
 
 @Composable
 private fun BarAction(tool: Tool, label: String = tool.label, onClick: () -> Unit) =
-    BarButton(label, tool.icon, tool.tint, onClick)
+    BarButton(label, tool.icon, tool.tint, tool.tile, onClick)
 
 @Composable
 private fun BarButton(
